@@ -127,3 +127,21 @@ presentation and issuance, and during maintenance. Valid COSE status can extend
 freshness without restarting. Public epoch/revision floors persist across
 restart, so replaying an older signed file fails closed. Installing a different
 issuer key requires explicit configuration and restart.
+
+## Current limits
+
+Production global gate providers are not configured by this door yet; the only
+interactive global gate adapter in this build is the development feature. The
+community voucher gate is real and requires a configured sponsor public key.
+Legal-order/self-ban authority integration and additional-device enrolment remain
+unconfigured. The mandatory legal veto still runs on every community gate check.
+
+Pin changes use cmbr's sealed cblc interface and fail closed while the required
+cblc proof extensions are unavailable. Initial v2 pins and reads work. Credentials
+require caller-authorized public device keys; this door does not implement a
+separate device-key attestation protocol. Schema changes currently advance the
+epoch immediately; archived definitions do not authorize grandfathering.
+
+The optional remote Turso test needs an explicitly supplied disposable database.
+Public CI uses local libSQL and synthetic credentials only. TLS ingress, operational
+public-key distribution and deployment are outside this repository's test run.
