@@ -19,6 +19,12 @@ use tokio::sync::Mutex;
 pub trait Clock: Send + Sync {
     fn now(&self) -> u64;
 }
+tokio::task_local! {
+    static OPERATION_TIME: u64;
+}
+pub(crate) async fn at<T>(now: u64, operation: impl std::future::Future<Output = T>) -> T {
+    OPERATION_TIME.scope(now, operation).await
+}
 pub struct SystemClock;
 impl Clock for SystemClock {
     fn now(&self) -> u64 {

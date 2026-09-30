@@ -201,7 +201,7 @@ macro_rules! actions {
                         let ctx = door.authorize(action, request.headers()).await?;
                         let Json(request) = tokio::time::timeout(std::time::Duration::from_secs(10), Json::<$request>::from_request(request, &())).await.map_err(|_| Error::Invalid)?.map_err(|_| Error::Invalid)?;
                         let ctx = door.complete_context(ctx)?;
-                        let response: $response = door.$name(ctx, request).await?;
+                        let response: $response = crate::service::at(ctx.now, door.$name(ctx, request)).await?;
                         Ok::<_, Error>(Json(response))
                     }
                 ));
