@@ -720,6 +720,10 @@ impl World {
                     "tampered credential accepted",
                 )?;
                 require(
+                    verifier.credential(&credential, self.now + 86400).is_err(),
+                    "expired new-member credential accepted while snapshots remain fresh",
+                )?;
+                require(
                     verifier
                         .credential(&credential, self.now + 40 * 86400)
                         .is_err(),

@@ -59,7 +59,7 @@ prints a short description. Unexpected errors or assertion failures exit nonzero
 | `02-voucher.json` | The lobby names the missing voucher and warns about expiry and losing all devices. A member-bound voucher permits admission; replay fails. |
 | `03-policy.json` | An admin adds the voucher requirement. Epoch, revision and signed settings change; the old credential and rollback feed fail verification. Renewal lapses the member until the new gate passes. |
 | `04-red-gate.json` | Withdrawing the required gate lapses an admitted member and invalidates the previously issued credential. |
-| `05-expiry.json` | At the registration deadline, maintenance frees the reserved handle. A fresh proof of the same pseudonym cannot register again: **NO RETURN**. |
+| `05-expiry.json` | At the registration deadline, maintenance frees the reserved handle, and a different holder reserves it. A fresh proof of the same pseudonym cannot register again: **NO RETURN**. |
 | `06-lost-passkeys.json` | Revoking the last passkey releases access, rejects its existing session and credential, and permanently refuses re-registration. Physical loss cannot be observed by a server; this exercises explicit loss/revocation of every registered key. |
 | `07-second-device.json` | **BLOCKED:** the current public door and membership facade provide no additional-passkey enrolment operation. The script proves both attempted registration paths refuse it, then reports the blocker. It does **not** claim to prove surviving-device access. |
 | `08-root-force.json` | Root forces a setting; an admin's community override cannot change the effective value, and an admin cannot use the root action. |
