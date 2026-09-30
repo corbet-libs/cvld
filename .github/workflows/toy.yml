@@ -28,7 +28,7 @@ jobs:
         with:
           cache-on-failure: false
           shared-key: toy
-          key: ${{ hashFiles('toy/prepare.py', 'toy/build.sh') }}
+          key: ${{ hashFiles('toy/prepare.py', 'toy/build.sh', 'toy/meter.c') }}
       - name: Install child-process test clock
         run: sudo apt-get update -qq && sudo apt-get install -y libfaketime
       - run: rustc --version
