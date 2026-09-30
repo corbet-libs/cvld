@@ -118,12 +118,12 @@ pub struct Suspend {
 }
 
 struct Protocol {
-    request: utoipa::openapi::RequestBody,
+    request: utoipa::openapi::request_body::RequestBody,
     response: utoipa::openapi::Response,
     components: Vec<(String, utoipa::openapi::RefOr<utoipa::openapi::Schema>)>,
 }
 fn protocol<I: ToSchema, O: ToSchema>() -> Protocol {
-    use utoipa::openapi::{Content, RequestBody, Required, Response};
+    use utoipa::openapi::{Content, Required, Response, request_body::RequestBody};
     let mut components = Vec::new();
     I::schemas(&mut components);
     O::schemas(&mut components);
