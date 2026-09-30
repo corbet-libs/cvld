@@ -652,7 +652,11 @@ async fn a_global_signing_key_cannot_be_installed_as_a_community_key() {
         )
         .unwrap();
         assert!(matches!(
-            cvld::service::Door::community(config.clone(), service.clock.clone()).await,
+            cvld::service::Door::community(
+                cvld::config::CommunityConfig::read(config_path.to_str().unwrap()).unwrap(),
+                service.clock.clone()
+            )
+            .await,
             Err(cvld::error::Error::Invalid)
         ));
         assert_eq!(

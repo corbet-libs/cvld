@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { checkPins } from './check-pins.mjs';
 
 const revision = '6b94dacd7fa04aa8847c62c6471a1fc5c0f6c9dc';
@@ -49,11 +49,16 @@ test('require the crlt Git dependency', () => {
 });
 
 test('pin every CI action while selecting current stable Rust', () => {
-  const workflow = readFileSync(new URL('./workflows/ci.yml', import.meta.url), 'utf8');
-  const actions = [...workflow.matchAll(/uses:\s*([\w./-]+)@(\S+)/g)];
-  assert.ok(actions.length > 0);
-  for (const [, name, revision] of actions) {
-    assert.match(revision, /^[a-f0-9]{40}$/, `${name} must be immutable`);
+  const directory = new URL('./workflows/', import.meta.url);
+  const files = readdirSync(directory).filter(name => /\.ya?ml$/.test(name));
+  assert.ok(files.length > 0);
+  for (const file of files) {
+    const workflow = readFileSync(new URL(file, directory), 'utf8');
+    const actions = [...workflow.matchAll(/uses:\s*([\w./-]+)@(\S+)/g)];
+    assert.ok(actions.length > 0);
+    for (const [, name, revision] of actions) {
+      assert.match(revision, /^[a-f0-9]{40}$/, `${file}: ${name} must be immutable`);
+    }
+    assert.match(workflow, /toolchain: stable/);
   }
-  assert.match(workflow, /toolchain: stable/);
 });
