@@ -2,8 +2,7 @@
 use crate::{error::Error, service::Door};
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, State},
-    http::HeaderMap,
+    extract::{DefaultBodyLimit, FromRequest, Request, State},
     routing::post,
 };
 use serde::{Deserialize, Serialize};
@@ -196,11 +195,11 @@ macro_rules! actions {
             let mut router = Router::new();
             $( $(#[$attr])* {
                 router = router.route(concat!("/v1/", stringify!($name)), post(
-                    |State(door): State<Door>, headers: HeaderMap, body: std::result::Result<Json<$request>, axum::extract::rejection::JsonRejection>| async move {
+                    |State(door): State<Door>, request: Request| async move {
                         let action = action(stringify!($name)).expect("registered action");
                         let _guard = door.request_guard(action).await;
-                        let ctx = door.authorize(action, &headers).await?;
-                        let Json(request) = body.map_err(|_| Error::Invalid)?;
+                        let ctx = door.authorize(action, request.headers()).await?;
+                        let Json(request) = Json::<$request>::from_request(request, &()).await.map_err(|_| Error::Invalid)?;
                         let response: $response = door.$name(ctx, request).await?;
                         Ok::<_, Error>(Json(response))
                     }
