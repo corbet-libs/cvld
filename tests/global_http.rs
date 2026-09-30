@@ -55,7 +55,7 @@ async fn wallet_passkey_blind_passport_and_host_role_boundaries() {
             status.shared_expiry,
         )
         .unwrap();
-        let proof = passport.present(&mut rng, &request).unwrap();
+        let proof = trusted_presentation(&passport, &request).await;
         pseudonyms
             .push(cpsd::verify(&mut rng, std::slice::from_ref(&issuer), &request, &proof).unwrap());
     }

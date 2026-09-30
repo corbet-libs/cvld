@@ -227,3 +227,36 @@ pub async fn call_status(
     }
     request.send().await.unwrap().status().as_u16()
 }
+
+/// Synthetic authenticated community for wallet-only cryptographic tests.
+/// Full community tests obtain this signature and ring over the real HTTP door.
+pub async fn trusted_presentation(
+    passport: &cpsd::Passport,
+    request: &cpsd::PresentationRequest,
+) -> cpsd::Presentation {
+    let mut signer = csgn::PersistentSigner::create(
+        csgn::MemoryStore::default(),
+        "synthetic-community",
+        csgn::SecretKey::from_seed(&mut [8; 32]),
+        NOW - 1,
+        86400,
+    )
+    .await
+    .unwrap();
+    let signed = signer
+        .sign(
+            csgn::Kind::Credential,
+            &request.to_bytes(),
+            NOW,
+            request.now() + 1,
+        )
+        .await
+        .unwrap();
+    let expected = cpsd::AuthenticatedCommunity::from_authenticated_origin(
+        request.community().clone(),
+        signer.key_ring().unwrap().clone(),
+    );
+    passport
+        .present(&mut cpsd::rand::rngs::OsRng, &expected, &signed, NOW)
+        .unwrap()
+}

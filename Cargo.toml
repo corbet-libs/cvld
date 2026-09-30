@@ -12,7 +12,7 @@ default = []
 development-gate = ["cglb/development-gate"]
 
 [dependencies]
-cglb = { git = "https://github.com/corbet-libs/cglb", rev = "bf259283e64219e820e9312e9ad5b0ecdae2e846" }
+cglb = { git = "https://github.com/corbet-libs/cglb", rev = "e762c383e1eea66c8dcc5415a55c9f88af2edc69" }
 cpky = { git = "https://github.com/corbet-foss/cpky", rev = "ae52e4dbf9c7aa954991927e9ece9f70c81ac5ff" }
 cthl = { git = "https://github.com/corbet-foss/cthl", rev = "7f1a38de4285dee4b15ee8f9e82c1cb257513644" }
 axum = "0.8.9"
@@ -28,7 +28,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 chrono = "0.4"
 rand = "0.8"
 thiserror = "2"
-zeroize = "=1.8.2"
+zeroize = "1.9"
 
 [dev-dependencies]
 tempfile = "3"
