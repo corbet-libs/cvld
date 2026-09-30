@@ -5,9 +5,9 @@ import { once } from "node:events";
 import { client } from "./index.ts";
 
 test("refuse ambiguous and plaintext remote origins", () => {
-  for (const url of ["http://remote.example", "https://user:secret@example.test",
+  for (const url of ["synthetic-private-marker", "http://remote.example", "https://user:secret@example.test",
     "https://example.test/path", "https://example.test?query", "https://example.test#fragment"]) {
-    assert.throws(() => client(url, "synthetic-session"));
+    assert.throws(() => client(url, "synthetic-session"), { message: "invalid service origin" });
   }
 });
 
@@ -28,7 +28,7 @@ test("refuse redirects and per-call origin overrides before leaking requests", a
     const api = client(base, "synthetic-session");
     await assert.rejects(api.POST("/v1/register_begin", {
       body: { bootstrap: "synthetic-bootstrap" }, redirect: "follow",
-    }));
+    }), { message: "service unavailable" });
     await assert.rejects(api.POST("/v1/register_begin", {
       body: { bootstrap: "synthetic-bootstrap" }, baseUrl: targetUrl,
     }));
