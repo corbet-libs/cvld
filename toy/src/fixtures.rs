@@ -16,7 +16,7 @@ fn write(dir: &Path, name: &str, bytes: &[u8]) -> String {
     std::fs::write(&path, bytes).unwrap();
     path.to_str().unwrap().to_owned()
 }
-pub async fn global(dir: &Path, listen: String, burst: u32) {
+pub async fn global(dir: &Path, listen: String, burst: u32, now: u64) {
     let mut rng = cpsd::rand::rngs::OsRng;
     let issuer = cpsd::IssuerKey::generate(
         &mut rng,
@@ -29,7 +29,7 @@ pub async fn global(dir: &Path, listen: String, burst: u32) {
         scope: "global".into(),
         revision: 1,
         epoch: 1,
-        shared_expiry: (NOW / 86_400 + 40) * 86_400,
+        shared_expiry: (now / 86_400 + 40) * 86_400,
         gates: vec![cglb::GatePolicy {
             gate: "development".into(),
             provider: "cglb.test".into(),
@@ -40,7 +40,7 @@ pub async fn global(dir: &Path, listen: String, burst: u32) {
         csgn::MemoryStore::default(),
         "policy-authority",
         csgn::SecretKey::from_seed(&mut [3; 32]),
-        NOW - 1,
+        now - 1,
         86_400 * 100,
     )
     .await
@@ -49,7 +49,7 @@ pub async fn global(dir: &Path, listen: String, burst: u32) {
         .sign(
             csgn::Kind::SettingsSnapshot,
             &serde_json::to_vec(&policy).unwrap(),
-            NOW,
+            now,
             policy.shared_expiry + 1,
         )
         .await
@@ -182,7 +182,7 @@ pub fn community(dir: &Path, listen: String, name: &str, public: &GlobalPublic, 
         community: name.into(),
         database_url: format!("file://{}", dir.join("community.db").display()),
         database_token_file: None,
-        signing_seed_file: write(dir, "signer", &[name.as_bytes()[0]; 32]),
+        signing_seed_file: write(dir, "signer", &cpsd::rand::random::<[u8; 32]>()),
         rulebook_file: write(
             dir,
             "rulebook",

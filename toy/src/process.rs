@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::{
     collections::BTreeMap,
     fs,
+    io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{Arc, Mutex},
@@ -57,21 +58,29 @@ pub struct Cli {
     pub scope: String,
     pub meter: PathBuf,
     pub metrics: Arc<Mutex<Metrics>>,
+    counters: Arc<Mutex<(u64, u64, u64, String)>>,
 }
 impl Cli {
     fn counts(&self) -> (u64, u64) {
-        fs::read_to_string(&self.meter)
-            .unwrap_or_default()
-            .lines()
-            .fold((0, 0), |sum, line| {
-                let mut n = line
-                    .split_whitespace()
-                    .map(|s| s.parse::<u64>().expect("meter count"));
-                (
-                    sum.0 + n.next().expect("read count"),
-                    sum.1 + n.next().expect("returned count"),
-                )
-            })
+        let mut state = self.counters.lock().unwrap();
+        if let Ok(mut file) = fs::File::open(&self.meter) {
+            file.seek(SeekFrom::Start(state.0)).expect("seek meter");
+            let mut tail = String::new();
+            let read = file.read_to_string(&mut tail).expect("read meter");
+            state.0 += read as u64;
+            state.3.push_str(&tail);
+            // A sample may race one append; keep an incomplete final record.
+            if let Some(end) = state.3.rfind('\n') {
+                let complete = state.3[..=end].to_owned();
+                state.3.drain(..=end);
+                for line in complete.lines() {
+                    let (read, returned) = line.split_once(' ').expect("meter record");
+                    state.1 += read.parse::<u64>().expect("read count");
+                    state.2 += returned.parse::<u64>().expect("returned count");
+                }
+            }
+        }
+        (state.1, state.2)
     }
     pub fn call(&self, token: Option<&str>, action: &str, body: Value) -> Result<Value> {
         let before = self.counts();
@@ -141,6 +150,7 @@ pub struct Service {
     scope: String,
     faketime: PathBuf,
     pub dir: PathBuf,
+    pub initial: Value,
 }
 impl Service {
     pub fn start(
@@ -162,6 +172,7 @@ impl Service {
             dir: dir.to_owned(),
             meter: dir.join("meter"),
             metrics,
+            counters: Arc::new(Mutex::new((0, 0, 0, String::new()))),
         };
         let child = Self::spawn(&cli, scope, faketime)?;
         let mut service = Self {
@@ -170,6 +181,7 @@ impl Service {
             scope: scope.into(),
             faketime: faketime.to_owned(),
             dir: dir.to_owned(),
+            initial: Value::Null,
         };
         service.ready()?;
         Ok(service)
@@ -207,7 +219,8 @@ impl Service {
             if self.child.try_wait().map_err(|_| "poll service")?.is_some() {
                 return Err(format!("{} service exited during startup", self.scope));
             }
-            if self.cli.call(None, action, serde_json::json!({})).is_ok() {
+            if let Ok(value) = self.cli.call(None, action, serde_json::json!({})) {
+                self.initial = value;
                 return Ok(());
             }
             std::thread::sleep(Duration::from_millis(100));

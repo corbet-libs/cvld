@@ -134,11 +134,19 @@ impl World {
     async fn new(bin: &Path, count: usize, burst: u32, remote: bool) -> Result<Self> {
         let dir = tempfile::tempdir().map_err(|_| "temporary directory")?;
         let clock = dir.path().join("clock");
-        process::clock(&clock, fixtures::NOW);
+        let now = if remote {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+        } else {
+            fixtures::NOW
+        };
+        process::clock(&clock, now);
         let metrics = Arc::new(Mutex::new(Metrics::default()));
         let global_dir = dir.path().join("global");
         fs::create_dir(&global_dir).map_err(|_| "global directory")?;
-        fixtures::global(&global_dir, process::port(), burst).await;
+        fixtures::global(&global_dir, process::port(), burst, now).await;
         if remote {
             let url = std::env::var("TURSO_URL").map_err(|_| "TURSO_URL required")?;
             let token = std::env::var("TURSO_TOKEN").map_err(|_| "TURSO_TOKEN required")?;
@@ -162,7 +170,7 @@ impl World {
             &clock,
             metrics.clone(),
         )?;
-        let public: GlobalPublic = decode(global.cli.call(None, "global_public", json!({}))?)?;
+        let public: GlobalPublic = decode(global.initial.clone())?;
         let mut communities = Vec::new();
         for index in 0..count {
             let name = format!("community{index}");
@@ -177,10 +185,10 @@ impl World {
                 &clock,
                 metrics.clone(),
             )?;
-            let feed: TrustFeed = decode(service.cli.call(None, "trust_feed", json!({}))?)?;
+            let feed: TrustFeed = decode(service.initial.clone())?;
             let ring = csgn::KeyRing::from_cbor(&feed.key_ring).map_err(|_| "community ring")?;
             let mut verifier = offline::Verifier::new(&name, ring);
-            verifier.update(&feed, fixtures::NOW)?;
+            verifier.update(&feed, now)?;
             communities.push(Community {
                 service,
                 name,
@@ -196,7 +204,7 @@ impl World {
             communities,
             wallets: BTreeMap::new(),
             members: BTreeMap::new(),
-            now: fixtures::NOW,
+            now,
             clock,
             metrics,
             _dir: dir,
