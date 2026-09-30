@@ -199,7 +199,8 @@ macro_rules! actions {
                         let action = action(stringify!($name)).expect("registered action");
                         let _guard = door.request_guard(action).await;
                         let ctx = door.authorize(action, request.headers()).await?;
-                        let Json(request) = Json::<$request>::from_request(request, &()).await.map_err(|_| Error::Invalid)?;
+                        let Json(request) = tokio::time::timeout(std::time::Duration::from_secs(10), Json::<$request>::from_request(request, &())).await.map_err(|_| Error::Invalid)?.map_err(|_| Error::Invalid)?;
+                        let ctx = door.complete_context(ctx)?;
                         let response: $response = door.$name(ctx, request).await?;
                         Ok::<_, Error>(Json(response))
                     }

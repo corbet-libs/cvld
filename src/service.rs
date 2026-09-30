@@ -207,6 +207,17 @@ impl Door {
     fn auth(&self, host: &str) -> Result<Arc<Mutex<Auth>>> {
         self.inner.hosts.get(host).cloned().ok_or(Error::WrongHost)
     }
+    pub(crate) fn complete_context(&self, mut ctx: Context) -> Result<Context> {
+        ctx.now = self.inner.clock.now();
+        if ctx
+            .grant
+            .as_ref()
+            .is_some_and(|grant| grant.expires <= ctx.now)
+        {
+            return Err(Error::Unauthorized);
+        }
+        Ok(ctx)
+    }
     pub(crate) async fn authorize(&self, action: &Action, headers: &HeaderMap) -> Result<Context> {
         // Service-wide quotas cannot be evaded with forged IPs, handles or fresh tokens.
         if !matches!(
