@@ -179,6 +179,8 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
+        Error: "invalid" | "unauthorized" | "forbidden" | "wrong_host" | "throttled" | "refused" | "unavailable";
+        /** @enum {string} */
         Role: "member" | "admin" | "root";
     };
     responses: never;
@@ -220,7 +222,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -255,7 +261,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -288,7 +298,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -325,7 +339,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -365,7 +383,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -396,7 +418,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -429,7 +455,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -465,7 +495,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -505,7 +539,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };
@@ -541,7 +579,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
             };
         };
     };

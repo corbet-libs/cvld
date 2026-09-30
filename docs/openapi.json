@@ -1,6 +1,18 @@
 {
   "components": {
     "schemas": {
+      "Error": {
+        "enum": [
+          "invalid",
+          "unauthorized",
+          "forbidden",
+          "wrong_host",
+          "throttled",
+          "refused",
+          "unavailable"
+        ],
+        "type": "string"
+      },
       "Role": {
         "enum": [
           "member",
@@ -81,6 +93,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -132,6 +160,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -181,6 +225,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -244,6 +304,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -315,6 +391,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -352,6 +444,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -362,7 +470,7 @@
         ],
         "summary": "End this ephemeral session",
         "x-effect": "check",
-        "x-role": "member",
+        "x-role": "authenticated",
         "x-scope": "both"
       }
     },
@@ -406,6 +514,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -482,6 +606,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -553,6 +693,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
@@ -610,6 +766,22 @@
             "description": "Success"
           },
           "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Fixed redacted error category"
           }
         },
