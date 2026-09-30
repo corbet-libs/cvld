@@ -134,8 +134,9 @@ Both call these APIs directly. Setting resolution, null versus inheritance,
 bounds, notice and prospective epochs remain crbk/cplc rules. Schema validation
 and change classification remain cshm rules; no profile values are collected.
 
-`trust_feed` serves four signed snapshots (settings, current schema, public
-community directory, revocations), the public key ring and a signed manifest.
+`trust_feed` serves five signed snapshots (settings, current schema, schema
+versions and their cshm change classifications, public community directory,
+revocations), the public key ring and a signed manifest.
 The manifest's fixed `cplc.trust.v1` purpose separates it from flat settings;
 it binds community, durable revision, effective epoch, key ring and schema
 version. Each snapshot has its own revision and the same effective policy epoch.
@@ -186,3 +187,11 @@ service host; `Authenticated` means the session's exact host-selected role.
 
 The opt-in development build adds `development_gate` (Member, Global, Record).
 No production route, CLI command, MCP tool or OpenAPI path contains it.
+
+Community admission re-verifies the configured public global status on every
+presentation start, first registration and credential attempt. The door retains
+public epoch/revision floors in its community database; expired or rolled-back
+metadata is refused, including after restart. cmnt atomically refreshes policy
+and its freshness deadline; changed metadata invalidates old challenges. Local
+cleanup continues when global metadata expires. Issuer-key changes require an
+explicit service restart; no global secret or account data enters this path.

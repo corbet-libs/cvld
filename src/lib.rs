@@ -11,6 +11,7 @@ mod community_actions;
 pub mod config;
 pub mod error;
 mod global;
+mod global_trust;
 mod identity;
 pub mod mcp;
 pub mod service;

@@ -114,9 +114,16 @@ passes their wire format to cgts. Pin values and salts remain on the device;
 only the versioned, context-bound cpns digest enters cmbr. Policy, enrolment,
 leases, lapse and credential lifetimes remain owned by the facades.
 
-`trust_feed` returns the signed settings, schema, public community directory,
+`trust_feed` returns the signed settings, current schema and schema-version
+collection (with change classifications), public community directory,
 revocations and a purpose-separated signed manifest containing the key ring,
 schema version, policy epoch and durable revision. `trust_changes` performs a
 bounded long poll against that public revision. cfrm pulls at startup and after
 an announcement, verifies COSE and enforces revision/epoch floors locally.
 Neither call accepts a member identifier. No member lookup is required at runtime.
+
+Communities re-read the explicitly configured public global status before
+presentation and issuance, and during maintenance. Valid COSE status can extend
+freshness without restarting. Public epoch/revision floors persist across
+restart, so replaying an older signed file fails closed. Installing a different
+issuer key requires explicit configuration and restart.

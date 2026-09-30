@@ -21,6 +21,7 @@ fn verified_feed(
     assert_eq!(manifest.key_ring, feed.key_ring);
     for (kind, bytes) in [
         (cplc::SnapshotKind::Schema, &feed.schema),
+        (cplc::SnapshotKind::SchemaVersions, &feed.schema_versions),
         (cplc::SnapshotKind::Communities, &feed.communities),
         (cplc::SnapshotKind::RevocationList, &feed.revocations),
     ] {
@@ -270,10 +271,37 @@ async fn two_communities_admission_policy_lapse_and_release_over_http() {
         .call("schema_check", json!({"schema":schema}))
         .await
         .unwrap();
-    admin_client
-        .call("schema_set", json!({"schema":schema}))
-        .await
-        .unwrap();
+    let versions: TrustFeed = serde_json::from_value(
+        admin_client
+            .call("schema_set", json!({"schema":schema}))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let ring = csgn::KeyRing::from_cbor(&versions.key_ring).unwrap();
+    let archive: cplc::Snapshot<cplc::SchemaVersions> = cplc::verify_snapshot(
+        &ring,
+        &versions.schema_versions,
+        cplc::SnapshotExpectation {
+            community: "alpha",
+            kind: cplc::SnapshotKind::SchemaVersions,
+            minimum_revision: 1,
+            policy_epoch: versions.policy_epoch,
+            now: NOW + 3,
+        },
+    )
+    .unwrap();
+    assert_eq!(archive.content.current, 2);
+    assert_eq!(
+        archive
+            .content
+            .versions
+            .iter()
+            .map(|v| v.schema.version)
+            .collect::<Vec<_>>(),
+        vec![1, 2]
+    );
+    assert!(archive.content.versions[1].changes.is_some());
     let live = issue_community(&alpha, ah, &a, &passport).await;
     assert!(live.credential.is_some());
     let before_withdraw: TrustFeed =
@@ -364,4 +392,100 @@ async fn community_public_and_expensive_actions_have_aggregate_quotas() {
         );
         assert_eq!(call_status(&community, host, None, action, body).await, 429);
     }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn running_community_refreshes_expired_public_global_status() {
+    let global = global(100).await;
+    let public: GlobalPublic = serde_json::from_value(
+        client(&global, WALLET, None)
+            .call("global_public", json!({}))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let community = community("fresh", &public).await;
+    let host = "api.fresh.example.test";
+    let now = NOW + 3 * 86_400;
+    global.clock.set(now);
+    community.clock.set(now);
+    assert_eq!(
+        call_status(&community, host, None, "presentation_challenge", json!({})).await,
+        409
+    );
+    global.door.maintain().await.unwrap();
+    let updated: GlobalPublic = serde_json::from_value(
+        client(&global, WALLET, None)
+            .call("global_public", json!({}))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    std::fs::write(community.dir.path().join("global-status"), updated.status).unwrap();
+    community.door.maintain().await.unwrap();
+    assert_eq!(
+        call_status(&community, host, None, "presentation_challenge", json!({})).await,
+        200
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn signed_global_epoch_refresh_refuses_old_proofs_and_durable_rollback() {
+    let global = global(100).await;
+    let (wallet, passport, public) = wallet_passport(&global).await;
+    let community = community("epoch", &public).await;
+    let host = "api.epoch.example.test";
+    let member = enrol_community(&community, host, &passport).await;
+    let old_proof = presentation(&community, host, Some(&member.session), &passport).await;
+    let root = enrol(
+        &global,
+        ROOT,
+        Some("synthetic-operator-enrolment-capability"),
+    )
+    .await;
+    let root_client = client(&global, ROOT, Some(&root.session));
+    root_client
+        .call("global_warn", json!({"user":wallet.user}))
+        .await
+        .unwrap();
+    root_client
+        .call(
+            "global_suspend",
+            json!({"user":wallet.user,"until":(NOW/86_400+1)*86_400}),
+        )
+        .await
+        .unwrap();
+    let updated: GlobalPublic = serde_json::from_value(
+        client(&global, WALLET, None)
+            .call("global_public", json!({}))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    std::fs::write(community.dir.path().join("global-status"), &updated.status).unwrap();
+    assert_eq!(
+        call_status(
+            &community,
+            host,
+            Some(&member.session),
+            "credential_issue",
+            json!({"presentation":old_proof,"devices":vec![[13u8;32]]})
+        )
+        .await,
+        409
+    );
+    std::fs::write(community.dir.path().join("global-status"), public.status).unwrap();
+    assert_eq!(
+        call_status(&community, host, None, "presentation_challenge", json!({})).await,
+        409
+    );
+    let config = cvld::config::CommunityConfig::read(
+        community.dir.path().join("config.json").to_str().unwrap(),
+    )
+    .unwrap();
+    assert!(
+        cvld::service::Door::community(config, community.clock.clone())
+            .await
+            .is_err()
+    );
 }

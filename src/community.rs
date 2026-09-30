@@ -60,6 +60,8 @@ struct SessionState {
 }
 pub struct CommunityService {
     pub facade: Facade,
+    db: crlt::Db,
+    issuer_public_key: Vec<u8>,
     pub config: CommunityConfig,
     pub public: TrustFeed,
     pub changes: tokio::sync::watch::Sender<(u64, u64)>,
@@ -101,6 +103,7 @@ impl CommunityService {
             ("csgn", csgn::SCHEMA),
             ("cpsd", cmnt::storage::SCHEMA),
             ("service", crate::identity::SCHEMA),
+            ("global-trust", crate::global_trust::SCHEMA),
         ]);
         let migrations: Vec<_> = schemas
             .iter()
@@ -111,6 +114,9 @@ impl CommunityService {
             .await
             .map_err(|_| Error::Unavailable)?;
         crate::identity::bind(db, "community", &config.community).await?;
+        let global = crate::global_trust::load(db, &config, now).await?;
+        let status = global.status;
+        let status_until = global.valid_until;
         let scope = &config.community;
         let signer_store = csgn::LibsqlStore::new(db.community(scope).map_err(|_| Error::Invalid)?);
         let exists = signer_store
@@ -185,25 +191,6 @@ impl CommunityService {
                 .await
                 .map_err(|_| Error::Refused)?;
         }
-        let global_ring = csgn::KeyRing::from_cbor(
-            &std::fs::read(&config.global_key_ring_file).map_err(|_| Error::Unavailable)?,
-        )
-        .map_err(|_| Error::Invalid)?;
-        let signed_status =
-            std::fs::read(&config.global_status_file).map_err(|_| Error::Unavailable)?;
-        let status = cglb::Status::verify(
-            &signed_status,
-            &global_ring,
-            "global",
-            config.minimum_global_epoch,
-            config.minimum_global_revision,
-            now,
-        )
-        .map_err(|_| Error::Refused)?;
-        let status_until = global_ring
-            .verify(&signed_status, csgn::Kind::SettingsSnapshot, now)
-            .map_err(|_| Error::Refused)?
-            .valid_until();
         let host = format!("api.{}.{}", scope, config.domain);
         let membership = cmbr::Membership::new(
             db,
@@ -279,6 +266,8 @@ impl CommunityService {
         let (changes, _) = tokio::sync::watch::channel((public.revision, public.policy_epoch));
         Ok(Self {
             facade,
+            db: db.clone(),
+            issuer_public_key: status.issuer_public_key,
             config,
             public,
             changes,
@@ -288,6 +277,30 @@ impl CommunityService {
             logins: HashMap::new(),
             sessions: HashMap::new(),
         })
+    }
+    async fn refresh_global(&self, now: u64) -> Result<()> {
+        let global = crate::global_trust::load(&self.db, &self.config, now).await?;
+        if global.status.issuer_public_key != self.issuer_public_key {
+            return Err(Error::Refused);
+        }
+        self.facade
+            .refresh_passport_policy(
+                cmnt::PassportPolicy {
+                    epoch: global.status.epoch,
+                    valid_until: global.status.shared_expiry,
+                    gates: self
+                        .config
+                        .global_gates
+                        .iter()
+                        .map(|gate| cpsd::GateId::new(gate.clone()))
+                        .collect::<std::result::Result<_, _>>()
+                        .map_err(|_| Error::Invalid)?,
+                },
+                global.valid_until,
+                now,
+            )
+            .await
+            .map_err(|_| Error::Refused)
     }
     fn prune(&mut self, now: u64) {
         self.challenges.retain(|_, p| p.until > now);
@@ -318,6 +331,7 @@ impl CommunityService {
         owner: Option<cpky::Uuid>,
         now: u64,
     ) -> Result<PresentationChallenge> {
+        self.refresh_global(now).await?;
         self.prune(now);
         if self.challenges.len() >= self.config.pending_capacity {
             return Err(Error::Throttled);
@@ -343,6 +357,7 @@ impl CommunityService {
         })
     }
     pub async fn register_begin(&mut self, request: RegisterStart, now: u64) -> Result<Ceremony> {
+        self.refresh_global(now).await?;
         self.prune(now);
         if self.registrations.len() >= self.config.pending_capacity {
             return Err(Error::Throttled);
@@ -618,6 +633,7 @@ impl CommunityService {
         now: u64,
     ) -> Result<CredentialResponse> {
         use chrono::Datelike;
+        self.refresh_global(now).await?;
         self.prune(now);
         let challenge = self
             .challenges
@@ -679,6 +695,8 @@ impl CommunityService {
         Ok(())
     }
     pub async fn maintain(&mut self, now: u64) -> Result<()> {
+        // Stale global metadata blocks admission, but cannot stop local cleanup.
+        let _ = self.refresh_global(now).await;
         self.prune(now);
         self.facade
             .prune(now)
@@ -716,6 +734,7 @@ async fn publish(facade: &Facade, now: u64) -> Result<TrustFeed> {
         cplc::SnapshotKind::Schema,
         cplc::SnapshotKind::Communities,
         cplc::SnapshotKind::RevocationList,
+        cplc::SnapshotKind::SchemaVersions,
     ] {
         snapshots.push(
             policy
@@ -743,5 +762,6 @@ async fn publish(facade: &Facade, now: u64) -> Result<TrustFeed> {
         schema: snapshots.remove(0),
         communities: snapshots.remove(0),
         revocations: snapshots.remove(0),
+        schema_versions: snapshots.remove(0),
     })
 }

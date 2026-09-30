@@ -139,6 +139,7 @@ pub struct TrustFeed {
     pub manifest: Vec<u8>,
     pub settings: Vec<u8>,
     pub schema: Vec<u8>,
+    pub schema_versions: Vec<u8>,
     pub communities: Vec<u8>,
     pub revocations: Vec<u8>,
 }
