@@ -24,6 +24,11 @@ pub enum Error {
     #[error("service unavailable")]
     Unavailable,
 }
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ErrorBody {
+    pub error: Error,
+}
 pub type Result<T> = std::result::Result<T, Error>;
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
@@ -36,6 +41,6 @@ impl IntoResponse for Error {
             Self::Refused => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
         };
-        (status, Json(serde_json::json!({"error": self}))).into_response()
+        (status, Json(ErrorBody { error: self })).into_response()
     }
 }

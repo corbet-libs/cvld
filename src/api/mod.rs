@@ -240,6 +240,17 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
         "session".into(),
         SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)).into(),
     );
+    let mut error_schemas = Vec::new();
+    crate::error::ErrorBody::schemas(&mut error_schemas);
+    components.schemas.extend(error_schemas);
+    let mut error_response = Response::new("Fixed redacted error category");
+    error_response.content.insert(
+        "application/json".into(),
+        utoipa::openapi::Content::new(Some(
+            <crate::error::ErrorBody as utoipa::PartialSchema>::schema(),
+        ))
+        .into(),
+    );
     let mut paths = Paths::new();
     for action in ACTIONS {
         let protocol = (action.protocol)();
@@ -252,10 +263,10 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
             .responses
             .responses
             .insert("200".into(), protocol.response.into());
-        operation.responses.responses.insert(
-            "default".into(),
-            Response::new("Fixed redacted error category").into(),
-        );
+        operation
+            .responses
+            .responses
+            .insert("default".into(), error_response.clone().into());
         operation.extensions = Some(
             [
                 ("x-role", format!("{:?}", action.access).to_lowercase()),

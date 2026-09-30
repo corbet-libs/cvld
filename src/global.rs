@@ -13,6 +13,7 @@ pub struct GlobalService {
     pub facade: Facade,
     pub public: GlobalPublic,
     pub publication_seconds: u64,
+    #[cfg(feature = "development-gate")]
     pub development_expiry: u64,
 }
 impl GlobalService {
@@ -89,13 +90,16 @@ impl GlobalService {
             .signed_status(now, now + config.publication_seconds)
             .await
             .map_err(|_| Error::Refused)?;
-        let verified = facade
-            .key_ring()
-            .map_err(|_| Error::Unavailable)?
-            .verify(&status, csgn::Kind::RevocationListSnapshot, now)
-            .map_err(|_| Error::Unavailable)?;
-        let view: cglb::Status =
-            serde_json::from_slice(verified.payload()).map_err(|_| Error::Unavailable)?;
+        #[cfg(feature = "development-gate")]
+        let development_expiry = {
+            let ring = facade.key_ring().map_err(|_| Error::Unavailable)?;
+            let verified = ring
+                .verify(&status, csgn::Kind::RevocationListSnapshot, now)
+                .map_err(|_| Error::Unavailable)?;
+            let view: cglb::Status =
+                serde_json::from_slice(verified.payload()).map_err(|_| Error::Unavailable)?;
+            view.shared_expiry
+        };
         let public = GlobalPublic {
             key_ring: facade.key_ring().map_err(|_| Error::Unavailable)?.to_cbor(),
             issuer: facade.issuer_public_key().to_bytes(),
@@ -105,7 +109,8 @@ impl GlobalService {
             facade,
             public,
             publication_seconds: config.publication_seconds,
-            development_expiry: view.shared_expiry,
+            #[cfg(feature = "development-gate")]
+            development_expiry,
         })
     }
     pub async fn refresh(&mut self, now: u64) -> Result<()> {
