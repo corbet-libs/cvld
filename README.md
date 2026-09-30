@@ -29,3 +29,37 @@ Storage and cryptography remain in the existing crlt, cpsd and csgn leaves.
 No ORM, second authorization engine or direct cryptographic implementation is
 needed. Configuration is supplied in files; the service never searches for
 credentials. Rust compilation and tests run in GitHub Actions only.
+
+## Run and call the door
+
+Build and validate through GitHub Actions. Supply explicit configuration and
+separate service databases; [the global example](examples/global.json) contains
+paths and synthetic identifiers, not keys or credentials.
+
+```sh
+cvld serve global --config ./global.json
+cvld openapi
+cvld --url https://wallet.example.test --host wallet.example.test global_public
+cvld --url https://wallet.example.test --host wallet.example.test \
+  --session-file ./wallet.session passport_challenge
+cvld --url https://wallet.example.test --host wallet.example.test \
+  --session-file ./wallet.session mcp
+```
+
+CLI action input is `--request '<JSON>'`. MCP uses the official SDK's stdio
+transport and the same HTTP client. Both require HTTPS except for loopback
+integration tests; neither follows redirects. Session files contain only the
+opaque bearer token. The TypeScript wrapper in `clients/ts/index.ts` uses the
+committed generated types with `openapi-fetch`.
+
+For a global service, provision a 32-byte csgn signing seed, a cpsd issuer secret
+in its leaf wire format, a 32-byte uniqueness key, a COSE-signed cglb policy,
+and that policy authority's public key ring. The supplied operator UUID and
+initial registration capability select the root account; the caller cannot
+request a role. Registering a passkey requires a real WebAuthn ceremony with
+user verification. No key generation, credential discovery or deployment runs
+as a side effect of starting the door.
+
+`development-gate` is an opt-in Cargo feature for development builds. Enabling
+it in a release build is a compilation error. Production builds and their
+generated clients omit the synthetic gate.
