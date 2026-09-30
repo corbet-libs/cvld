@@ -21,3 +21,17 @@ fn production_binary_omits_the_development_action() {
             .is_err()
     );
 }
+
+#[test]
+fn malformed_cli_input_is_not_repeated_in_diagnostics() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_cvld"))
+        .arg("synthetic-private-marker")
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8(output.stderr).unwrap().trim(),
+        cvld::error::Error::Invalid.to_string()
+    );
+}

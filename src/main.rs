@@ -15,7 +15,20 @@ async fn main() {
     }
 }
 async fn run() -> Result<()> {
-    let matches = cli::command().get_matches();
+    let matches = match cli::command().try_get_matches() {
+        Ok(matches) => matches,
+        Err(error)
+            if matches!(
+                error.kind(),
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+            ) =>
+        {
+            print!("{error}");
+            return Ok(());
+        }
+        // Clap's ordinary diagnostics can repeat values from the command line.
+        Err(_) => return Err(Error::Invalid),
+    };
     let (name, args) = matches.subcommand().ok_or(Error::Invalid)?;
     match name {
         "openapi" => println!("{}", api::openapi_json()),
