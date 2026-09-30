@@ -35,6 +35,8 @@ credentials. Rust compilation and tests run in GitHub Actions only.
 Build and validate through GitHub Actions. Supply explicit configuration and
 separate service databases; [the global example](examples/global.json) contains
 paths and synthetic identifiers, not keys or credentials.
+The database records its service identity at initialization and refuses a later
+configuration that assigns it to another community.
 
 ```sh
 cvld serve global --config ./global.json
@@ -59,7 +61,10 @@ initial registration capability select the root account; the caller cannot
 request a role. Registering a passkey requires a real WebAuthn ceremony with
 user verification. No key generation, credential discovery or deployment runs
 as a side effect of starting the door.
+Choose the passport cohort's common expiry at a UTC-day boundary, as required
+by the community gate facade. Snapshot refresh deadlines may be shorter.
 
 `development-gate` is an opt-in Cargo feature for development builds. Enabling
-it in a release build is a compilation error. Production builds and their
+it in a release build is a compilation error, including releases with debug
+assertions enabled. Production builds and their
 generated clients omit the synthetic gate.
