@@ -310,3 +310,28 @@ async fn cors_never_authorizes_a_foreign_origin_or_host() {
         .unwrap();
     assert_eq!(response.status(), 403);
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn unauthenticated_and_foreign_hosts_are_refused_before_body_arrives() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let service = global(30).await;
+    for (host, expected) in [(WALLET, "401"), ("api.alpha.example.test", "421")] {
+        let mut stream = tokio::net::TcpStream::connect(service.base.trim_start_matches("http://"))
+            .await
+            .unwrap();
+        // Do not transmit any body: the service must authorize before requesting it.
+        let headers = format!(
+            "POST /v1/passport_issue HTTP/1.1\r\nHost: {host}\r\nContent-Type: application/json\r\nContent-Length: 12345\r\nConnection: close\r\n\r\n"
+        );
+        stream.write_all(headers.as_bytes()).await.unwrap();
+        let mut response = [0u8; 12];
+        tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            stream.read_exact(&mut response),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert_eq!(&response[..], format!("HTTP/1.1 {expected}").as_bytes());
+    }
+}
