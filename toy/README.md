@@ -16,7 +16,7 @@ Holder-side cryptography uses `cpsd`; the test sponsor uses `cvch` and
 Use GitHub Actions or a Linux build host with current stable Rust, Python 3.11+
 (for manifest preparation only), a C compiler, OpenSSL development headers and
 [libfaketime](https://github.com/wolfcw/libfaketime). Do not run Cargo on the
-workstation. The **toy** job in `.github/workflows/ci.yml` builds and runs this
+workstation. The **toy** job in `.github/workflows/toy.yml` builds and runs this
 harness automatically on every push to main.
 
 From the repository root on the build host:
