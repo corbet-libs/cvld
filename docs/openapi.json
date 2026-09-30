@@ -1,0 +1,624 @@
+{
+  "components": {
+    "schemas": {
+      "Role": {
+        "enum": [
+          "member",
+          "admin",
+          "root"
+        ],
+        "type": "string"
+      }
+    },
+    "securitySchemes": {
+      "session": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "cvld",
+    "version": "0.2.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/global_public": {
+      "post": {
+        "operationId": "global_public",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "issuer": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "key_ring": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "status": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key_ring",
+                    "issuer",
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Read authenticated global issuer material",
+        "x-effect": "check",
+        "x-role": "public",
+        "x-scope": "global"
+      }
+    },
+    "/v1/global_suspend": {
+      "post": {
+        "operationId": "global_suspend",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "until": {
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "user": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "user",
+                  "until"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Temporarily suspend and advance the global epoch",
+        "x-effect": "record",
+        "x-role": "root",
+        "x-scope": "global"
+      }
+    },
+    "/v1/global_warn": {
+      "post": {
+        "operationId": "global_warn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "user": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "user"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Record the warning preceding temporary suspension",
+        "x-effect": "record",
+        "x-role": "root",
+        "x-scope": "global"
+      }
+    },
+    "/v1/login_begin": {
+      "post": {
+        "operationId": "login_begin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "user": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "user"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "ceremony": {
+                      "type": "string"
+                    },
+                    "options": {},
+                    "user": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ceremony",
+                    "user",
+                    "options"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Begin account-first passkey authentication",
+        "x-effect": "check",
+        "x-role": "public",
+        "x-scope": "both"
+      }
+    },
+    "/v1/login_finish": {
+      "post": {
+        "operationId": "login_finish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "ceremony": {
+                    "type": "string"
+                  },
+                  "credential": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "ceremony",
+                  "credential"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "expires": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "role": {
+                      "$ref": "#/components/schemas/Role"
+                    },
+                    "token": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "user",
+                    "role",
+                    "expires"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Verify user and counter; create an ephemeral session",
+        "x-effect": "record",
+        "x-role": "public",
+        "x-scope": "both"
+      }
+    },
+    "/v1/logout": {
+      "post": {
+        "operationId": "logout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "End this ephemeral session",
+        "x-effect": "check",
+        "x-role": "member",
+        "x-scope": "both"
+      }
+    },
+    "/v1/passport_challenge": {
+      "post": {
+        "operationId": "passport_challenge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "bytes": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "bytes"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Reserve a blind passport issuance challenge",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "global"
+      }
+    },
+    "/v1/passport_issue": {
+      "post": {
+        "operationId": "passport_issue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "challenge": {
+                    "items": {
+                      "format": "int32",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "request": {
+                    "items": {
+                      "format": "int32",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "challenge",
+                  "request"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "bytes": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "bytes"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Issue a blind passport after global policy checks",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "global"
+      }
+    },
+    "/v1/register_begin": {
+      "post": {
+        "operationId": "register_begin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "bootstrap": {
+                    "description": "Required for an operator; never a role supplied by the caller.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ticket": {
+                    "description": "Community-only, verified passport enrolment ticket.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "ceremony": {
+                      "type": "string"
+                    },
+                    "options": {},
+                    "user": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ceremony",
+                    "user",
+                    "options"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Begin UV-required passkey registration",
+        "x-effect": "record",
+        "x-role": "public",
+        "x-scope": "both"
+      }
+    },
+    "/v1/register_finish": {
+      "post": {
+        "operationId": "register_finish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "ceremony": {
+                    "type": "string"
+                  },
+                  "credential": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "ceremony",
+                  "credential"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "user": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "user"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Verify and store the first passkey",
+        "x-effect": "record",
+        "x-role": "public",
+        "x-scope": "both"
+      }
+    }
+  }
+}
