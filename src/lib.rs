@@ -4,10 +4,10 @@
 compile_error!("development-gate is forbidden in release builds");
 
 pub mod api;
-pub mod auth;
+mod auth;
 pub mod cli;
 pub mod config;
 pub mod error;
-pub mod global;
+mod global;
 pub mod mcp;
 pub mod service;

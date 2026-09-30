@@ -33,6 +33,7 @@ pub struct Door {
     inner: Arc<Inner>,
 }
 struct Inner {
+    requests: Arc<Mutex<()>>,
     scope: Scope,
     hosts: BTreeMap<String, Arc<Mutex<Auth>>>,
     global: Mutex<GlobalService>,
@@ -138,6 +139,7 @@ impl Door {
         .map_err(|_| Error::Invalid)?;
         Ok(Self {
             inner: Arc::new(Inner {
+                requests: Arc::new(Mutex::new(())),
                 scope: Scope::Global,
                 hosts,
                 global: Mutex::new(global),
@@ -147,7 +149,18 @@ impl Door {
         })
     }
     /// Service maintenance uses only current state, without member activity logs.
+    pub(crate) async fn request_guard(
+        &self,
+        action: &Action,
+    ) -> Option<tokio::sync::OwnedMutexGuard<()>> {
+        if action.access == Access::Public {
+            None
+        } else {
+            Some(self.inner.requests.clone().lock_owned().await)
+        }
+    }
     pub async fn maintain(&self) -> Result<()> {
+        let _guard = self.inner.requests.lock().await;
         let now = self.inner.clock.now();
         let mut global = self.inner.global.lock().await;
         global
@@ -234,6 +247,7 @@ impl Door {
         if action.access != Access::Public {
             let grant = grant.as_ref().ok_or(Error::Unauthorized)?;
             let allowed = match action.access {
+                Access::Authenticated => true,
                 Access::Member => grant.role == Role::Member,
                 Access::Admin => grant.role == Role::Admin,
                 Access::Root => grant.role == Role::Root,

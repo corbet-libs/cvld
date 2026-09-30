@@ -132,6 +132,18 @@ async fn wallet_passkey_blind_passport_and_host_role_boundaries() {
     let changed: cglb::Status = serde_json::from_slice(signed.payload()).unwrap();
     assert_eq!(changed.epoch, 2);
     assert!(client.call("passport_challenge", json!({})).await.is_err());
+    root_client.call("logout", json!({})).await.unwrap();
+    assert_eq!(
+        call_status(
+            &service,
+            ROOT,
+            Some(&root.session),
+            "global_warn",
+            json!({"user":member.user})
+        )
+        .await,
+        401
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]

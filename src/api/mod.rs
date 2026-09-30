@@ -20,6 +20,7 @@ pub enum Role {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Access {
     Public,
+    Authenticated,
     Member,
     Admin,
     Root,
@@ -196,7 +197,9 @@ macro_rules! actions {
             $( $(#[$attr])* {
                 router = router.route(concat!("/v1/", stringify!($name)), post(
                     |State(door): State<Door>, headers: HeaderMap, body: std::result::Result<Json<$request>, axum::extract::rejection::JsonRejection>| async move {
-                        let ctx = door.authorize(action(stringify!($name)).expect("registered action"), &headers).await?;
+                        let action = action(stringify!($name)).expect("registered action");
+                        let _guard = door.request_guard(action).await;
+                        let ctx = door.authorize(action, &headers).await?;
                         let Json(request) = body.map_err(|_| Error::Invalid)?;
                         let response: $response = door.$name(ctx, request).await?;
                         Ok::<_, Error>(Json(response))
@@ -213,7 +216,7 @@ actions! {
     register_finish(RegisterFinish) -> User, Public, Both, Record, "Verify and store the first passkey";
     login_begin(User) -> Ceremony, Public, Both, Check, "Begin account-first passkey authentication";
     login_finish(LoginFinish) -> Session, Public, Both, Record, "Verify user and counter; create an ephemeral session";
-    logout(Empty) -> Empty, Member, Both, Check, "End this ephemeral session";
+    logout(Empty) -> Empty, Authenticated, Both, Check, "End this ephemeral session";
     global_public(Empty) -> GlobalPublic, Public, Global, Check, "Read authenticated global issuer material";
     passport_challenge(Empty) -> Bytes, Member, Global, Record, "Reserve a blind passport issuance challenge";
     passport_issue(PassportIssue) -> Bytes, Member, Global, Record, "Issue a blind passport after global policy checks";
