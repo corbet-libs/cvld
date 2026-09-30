@@ -7,7 +7,7 @@ use axum::{
     routing::post,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use utoipa::ToSchema;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
@@ -44,6 +44,7 @@ pub struct Action {
     pub effect: Effect,
     pub request: fn() -> Value,
     pub response: fn() -> Value,
+    protocol: fn() -> Protocol,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -116,6 +117,34 @@ pub struct Suspend {
     pub until: u64,
 }
 
+struct Protocol {
+    request: utoipa::openapi::RequestBody,
+    response: utoipa::openapi::Response,
+    components: Vec<(String, utoipa::openapi::RefOr<utoipa::openapi::Schema>)>,
+}
+fn protocol<I: ToSchema, O: ToSchema>() -> Protocol {
+    use utoipa::openapi::{Content, RequestBody, Required, Response};
+    let mut components = Vec::new();
+    I::schemas(&mut components);
+    O::schemas(&mut components);
+    let mut request = RequestBody::new();
+    request.required = Some(Required::True);
+    request.content.insert(
+        "application/json".into(),
+        Content::new(Some(I::schema())).into(),
+    );
+    let mut response = Response::new("Success");
+    response.content.insert(
+        "application/json".into(),
+        Content::new(Some(O::schema())).into(),
+    );
+    Protocol {
+        request,
+        response,
+        components,
+    }
+}
+
 fn schema<T: ToSchema>() -> Value {
     let mut schemas = Vec::new();
     T::schemas(&mut schemas);
@@ -160,7 +189,7 @@ macro_rules! actions {
         pub static ACTIONS: &[Action] = &[$(
             $(#[$attr])* Action { name: stringify!($name), description: $description,
                 access: Access::$access, scope: Scope::$scope, effect: Effect::$effect,
-                request: schema::<$request>, response: schema::<$response> },
+                request: schema::<$request>, response: schema::<$response>, protocol: protocol::<$request, $response> },
         )*];
         pub fn router(door: Door) -> Router {
             let mut router = Router::new();
@@ -198,47 +227,61 @@ pub fn action(name: &str) -> Option<&'static Action> {
     ACTIONS.iter().find(|a| a.name == name)
 }
 pub fn openapi() -> utoipa::openapi::OpenApi {
-    let mut components = serde_json::Map::new();
-    fn component_refs(value: &mut Value) {
-        match value {
-            Value::Object(map) => {
-                if let Some(Value::String(reference)) = map.get_mut("$ref") {
-                    *reference = reference.replace("#/$defs/", "#/components/schemas/");
-                }
-                for value in map.values_mut() {
-                    component_refs(value);
-                }
-            }
-            Value::Array(values) => {
-                for value in values {
-                    component_refs(value);
-                }
-            }
-            _ => {}
-        }
-    }
-    let mut paths = serde_json::Map::new();
+    use utoipa::openapi::{
+        Components, Info, OpenApi, Paths, Response,
+        path::{HttpMethod, Operation, PathItem},
+        security::{Http, HttpAuthScheme, SecurityRequirement, SecurityScheme},
+    };
+    let mut components = Components::new();
+    components.security_schemes.insert(
+        "session".into(),
+        SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)).into(),
+    );
+    let mut paths = Paths::new();
     for action in ACTIONS {
-        let mut input = (action.request)();
-        let mut output = (action.response)();
-        for schema in [&mut input, &mut output] {
-            if let Some(Value::Object(defs)) = schema.as_object_mut().unwrap().remove("$defs") {
-                components.extend(defs);
-            }
-        }
-        paths.insert(format!("/v1/{}", action.name), json!({"post": {
-            "operationId": action.name, "summary": action.description,
-            "x-role": format!("{:?}", action.access).to_lowercase(),
-            "x-effect": format!("{:?}", action.effect).to_lowercase(),
-            "requestBody": {"required": true, "content": {"application/json": {"schema": input}}},
-            "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": output}}},
-                "default": {"description": "Fixed redacted error category"}},
-            "security": if action.access == Access::Public { json!([]) } else { json!([{"session": []}]) }
-        }}));
+        let protocol = (action.protocol)();
+        components.schemas.extend(protocol.components);
+        let mut operation = Operation::new();
+        operation.operation_id = Some(action.name.into());
+        operation.summary = Some(action.description.into());
+        operation.request_body = Some(protocol.request.into());
+        operation
+            .responses
+            .responses
+            .insert("200".into(), protocol.response.into());
+        operation.responses.responses.insert(
+            "default".into(),
+            Response::new("Fixed redacted error category").into(),
+        );
+        operation.extensions = Some(
+            [
+                ("x-role", format!("{:?}", action.access).to_lowercase()),
+                ("x-effect", format!("{:?}", action.effect).to_lowercase()),
+                ("x-scope", format!("{:?}", action.scope).to_lowercase()),
+            ]
+            .into_iter()
+            .collect(),
+        );
+        operation.security = Some(if action.access == Access::Public {
+            Vec::new()
+        } else {
+            vec![SecurityRequirement::new(
+                "session",
+                std::iter::empty::<&str>(),
+            )]
+        });
+        paths.paths.insert(
+            format!("/v1/{}", action.name),
+            PathItem::new(HttpMethod::Post, operation),
+        );
     }
-    let mut document = json!({"openapi":"3.1.0", "info":{"title":"cvld", "version":"0.2.0"},
-        "paths": paths, "components":{"schemas": components,
-            "securitySchemes":{"session":{"type":"http", "scheme":"bearer"}}}});
-    component_refs(&mut document);
-    serde_json::from_value(document).expect("registry builds valid OpenAPI")
+    let mut document = OpenApi::new(Info::new("cvld", "0.2.0"), paths);
+    document.components = Some(components);
+    document
+}
+/// Canonical object ordering makes generated documents reproducible.
+pub fn openapi_json() -> String {
+    let mut value = serde_json::to_value(openapi()).expect("OpenAPI is serializable");
+    value.sort_all_objects();
+    serde_json::to_string_pretty(&value).expect("OpenAPI is serializable")
 }

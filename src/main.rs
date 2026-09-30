@@ -18,12 +18,7 @@ async fn run() -> Result<()> {
     let matches = cli::command().get_matches();
     let (name, args) = matches.subcommand().ok_or(Error::Invalid)?;
     match name {
-        "openapi" => println!(
-            "{}",
-            api::openapi()
-                .to_pretty_json()
-                .map_err(|_| Error::Unavailable)?
-        ),
+        "openapi" => println!("{}", api::openapi_json()),
         "serve" => {
             let (scope, args) = args.subcommand().ok_or(Error::Invalid)?;
             let config = Config::read(args.get_one::<String>("config").ok_or(Error::Invalid)?)?;
