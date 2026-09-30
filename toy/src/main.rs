@@ -673,9 +673,9 @@ impl World {
                 )
             }
             Step::RenewalBlocked { member } => {
-                require(
-                    self.issue(&member).is_err(),
-                    "suspended passport renewed community access",
+                refused(
+                    self.issue(&member),
+                    &["wallet refuses presentation", "operation refused"],
                 )?;
                 Ok("community renewal refused with the suspended wallet's passport")
             }
