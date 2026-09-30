@@ -585,3 +585,86 @@ async fn free_fields_refuse_pins_without_changing_public_member_metadata() {
         );
     }
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_global_signing_key_cannot_be_installed_as_a_community_key() {
+    let global = global(100).await;
+    let public: GlobalPublic = serde_json::from_value(
+        client(&global, WALLET, None)
+            .call("global_public", json!({}))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let service = community("key-scope", &public).await;
+    let config_path = service.dir.path().join("config.json");
+    let mut config = cvld::config::CommunityConfig::read(config_path.to_str().unwrap()).unwrap();
+    let correct_seed = config.signing_seed_file.clone();
+    let fresh_db = format!("file://{}", service.dir.path().join("fresh.db").display());
+    config.database_url = fresh_db.clone();
+    config.signing_seed_file = global.dir.path().join("signer").to_str().unwrap().into();
+    assert!(matches!(
+        cvld::service::Door::community(config, service.clock.clone()).await,
+        Err(cvld::error::Error::Invalid)
+    ));
+    // Refusal precedes signer creation, so correcting the configuration works
+    // without erasing or resetting any database state.
+    let mut corrected = cvld::config::CommunityConfig::read(config_path.to_str().unwrap()).unwrap();
+    corrected.database_url = fresh_db;
+    corrected.signing_seed_file = correct_seed.clone();
+    cvld::service::Door::community(corrected, service.clock.clone())
+        .await
+        .unwrap();
+    let config = cvld::config::CommunityConfig::read(config_path.to_str().unwrap()).unwrap();
+    let ring = csgn::KeyRing::from_cbor(&public.key_ring).unwrap();
+    let status = ring
+        .verify(&public.status, csgn::Kind::SettingsSnapshot, NOW)
+        .unwrap();
+    let mut shared = csgn::PersistentSigner::create(
+        csgn::MemoryStore::default(),
+        "cglb:global",
+        csgn::SecretKey::from_seed(&mut cvld::config::Config::seed(&correct_seed).unwrap()),
+        cplc::day(NOW),
+        100 * 86_400,
+    )
+    .await
+    .unwrap();
+    for retired in [false, true] {
+        if retired {
+            shared
+                .rotate(csgn::SecretKey::from_seed(&mut [4; 32]), NOW)
+                .await
+                .unwrap();
+        }
+        let signed = shared
+            .sign(
+                csgn::Kind::SettingsSnapshot,
+                status.payload(),
+                NOW,
+                status.valid_until(),
+            )
+            .await
+            .unwrap();
+        std::fs::write(&config.global_status_file, signed).unwrap();
+        std::fs::write(
+            &config.global_key_ring_file,
+            shared.key_ring().unwrap().to_cbor(),
+        )
+        .unwrap();
+        assert!(matches!(
+            cvld::service::Door::community(config.clone(), service.clock.clone()).await,
+            Err(cvld::error::Error::Invalid)
+        ));
+        assert_eq!(
+            call_status(
+                &service,
+                "api.key-scope.example.test",
+                None,
+                "presentation_challenge",
+                json!({})
+            )
+            .await,
+            400
+        );
+    }
+}

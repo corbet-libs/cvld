@@ -119,13 +119,24 @@ impl CommunityService {
         let status_until = global.valid_until;
         let scope = &config.community;
         let signer_store = csgn::LibsqlStore::new(db.community(scope).map_err(|_| Error::Invalid)?);
-        let exists = signer_store
+        let saved = signer_store
             .load(scope)
             .await
-            .map_err(|_| Error::Unavailable)?
-            .is_some();
+            .map_err(|_| Error::Unavailable)?;
         let secret = csgn::SecretKey::from_seed(&mut Config::seed(&config.signing_seed_file)?);
-        let signer = if exists {
+        if global.signing_keys.contains(&secret.public_key())
+            || saved.as_ref().is_some_and(|saved| {
+                saved
+                    .state
+                    .key_ring()
+                    .keys()
+                    .iter()
+                    .any(|key| global.signing_keys.contains(&key.public_key()))
+            })
+        {
+            return Err(Error::Invalid);
+        }
+        let signer = if saved.is_some() {
             csgn::PersistentSigner::open(signer_store, scope, secret, now).await
         } else {
             csgn::PersistentSigner::create(
@@ -280,6 +291,17 @@ impl CommunityService {
     }
     async fn refresh_global(&self, now: u64) -> Result<()> {
         let global = crate::global_trust::load(&self.db, &self.config, now).await?;
+        let policy = self.facade.policy().lock().await;
+        if policy
+            .key_ring()
+            .map_err(|_| Error::Unavailable)?
+            .keys()
+            .iter()
+            .any(|key| global.signing_keys.contains(&key.public_key()))
+        {
+            return Err(Error::Invalid);
+        }
+        drop(policy);
         if global.status.issuer_public_key != self.issuer_public_key {
             return Err(Error::Refused);
         }

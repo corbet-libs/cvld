@@ -240,3 +240,6 @@ per-call overrides, disables ambient cookies, storage and referrer transmission.
 CI checks full matching first-party Git pins in resolved metadata and dependency
 declarations, including transitive dependencies. Workflow actions use immutable
 upstream commits; the Rust compiler remains current stable.
+Community startup and global-ring refresh reject any community signing key also
+present in the authenticated global signing ring, including retained keys. The
+startup check runs before storing the community signer.

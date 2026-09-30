@@ -14,6 +14,7 @@ pub const SCHEMA: &str = "CREATE TABLE cvld_global_trust (
 pub struct PublicStatus {
     pub status: cglb::Status,
     pub valid_until: u64,
+    pub signing_keys: Vec<[u8; 32]>,
 }
 
 pub async fn load(db: &Db, config: &CommunityConfig, now: u64) -> Result<PublicStatus> {
@@ -76,5 +77,6 @@ pub async fn load(db: &Db, config: &CommunityConfig, now: u64) -> Result<PublicS
     Ok(PublicStatus {
         status,
         valid_until,
+        signing_keys: ring.keys().iter().map(csgn::KeyEntry::public_key).collect(),
     })
 }
