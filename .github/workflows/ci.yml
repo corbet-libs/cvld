@@ -7,7 +7,9 @@ permissions:
   contents: read
 concurrency:
   group: cvld-${{ github.ref }}
-  cancel-in-progress: true
+  # Complete release security checks and save the cache across parallel pushes.
+  # GitHub still coalesces pending revisions to the latest commit.
+  cancel-in-progress: false
 jobs:
   test:
     runs-on: ubuntu-24.04
