@@ -21,8 +21,9 @@ deps = manifest['dependencies'] | manifest['dev-dependencies']
 for name in ['cmnt', 'cglb', 'cpky', 'cpsd', 'csgn', 'cvch', 'ed25519-dalek',
              'serde', 'serde_json', 'tokio', 'tempfile', 'chrono', 'webauthn-authenticator-rs']:
     lines.append(f'{name} = {value(deps[name])}')
-lines.extend(['[profile.dev]', 'opt-level = 1', '[profile.dev.package."*"]', 'opt-level = 3'])
+lines.extend(['[profile.dev.package."*"]', 'opt-level = 3',
+              '[profile.dev.package.cvld]', 'opt-level = 0',
+              '[profile.dev.package.cvld-toy]', 'opt-level = 1'])
 (build / 'Cargo.toml').write_text('\n'.join(lines) + '\n')
 # Resolve the additional harness root against the already locked dependency closure.
-if not (build / 'Cargo.lock').exists():
-    shutil.copyfile(root / 'Cargo.lock', build / 'Cargo.lock')
+shutil.copyfile(root / 'Cargo.lock', build / 'Cargo.lock')

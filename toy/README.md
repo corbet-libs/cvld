@@ -37,9 +37,11 @@ scenario finishes. Reports contain fixed assertion messages and aggregate
 measurements, never identifiers, handles, tokens, request bodies or SQL.
 
 `prepare.py` creates an ignored test-only crate under `.build/`. Its dependencies
-come from the door's manifest and its lock starts from the door's lockfile, so
+come from the door's manifest and every build starts from the door's lockfile, so
 parallel dependency updates do not leave separate hardcoded leaf revisions in
-the toy. The generated lock is retained in the CI artifact. Nothing is published.
+the toy. The generated lock is retained in the CI artifact. The CLI and harness
+share dependency build profiles; the cache key includes the build scripts and
+only successful runs publish a new cache. Nothing is published.
 
 Only service child processes receive the libfaketime preload. Their wall clock
 is frozen and advanced through an atomic timestamp-file replacement; monotonic

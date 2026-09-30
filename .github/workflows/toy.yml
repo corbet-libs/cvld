@@ -26,8 +26,9 @@ jobs:
           components: rustfmt
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
-          cache-on-failure: true
+          cache-on-failure: false
           shared-key: toy
+          key: ${{ hashFiles('toy/prepare.py', 'toy/build.sh') }}
       - name: Install child-process test clock
         run: sudo apt-get update -qq && sudo apt-get install -y libfaketime
       - run: rustc --version
