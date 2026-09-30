@@ -1,6 +1,30 @@
 {
   "components": {
     "schemas": {
+      "CredentialRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "devices": {
+            "items": {
+              "items": {
+                "format": "int32",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "presentation": {
+            "$ref": "#/components/schemas/PresentationInput"
+          }
+        },
+        "required": [
+          "presentation",
+          "devices"
+        ],
+        "type": "object"
+      },
       "Error": {
         "enum": [
           "invalid",
@@ -13,6 +37,163 @@
         ],
         "type": "string"
       },
+      "Lobby": {
+        "additionalProperties": false,
+        "properties": {
+          "handle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "member_id": {
+            "type": "string"
+          },
+          "missing": {},
+          "passport_required": {
+            "description": "Passport proof is always fresh when requesting a community credential.",
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string"
+          },
+          "steps": {
+            "items": {},
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/LobbyWarning"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "member_id",
+          "state",
+          "missing",
+          "steps",
+          "warnings",
+          "passport_required"
+        ],
+        "type": "object"
+      },
+      "LobbyWarning": {
+        "oneOf": [
+          {
+            "properties": {
+              "deadline": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "kind": {
+                "enum": [
+                  "registration_expires"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "deadline",
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "add_second_device_or_synced_passkey"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "PinEnvelope": {
+        "description": "Wire schema of cmbr's versioned pin capability; cmbr validates every binding.",
+        "properties": {
+          "community": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "fingerprint": {
+            "items": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "member": {
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "community",
+          "member",
+          "field",
+          "fingerprint"
+        ],
+        "type": "object"
+      },
+      "PinView": {
+        "additionalProperties": false,
+        "properties": {
+          "fingerprint": {
+            "items": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "revision": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fingerprint",
+          "revision"
+        ],
+        "type": "object"
+      },
+      "PresentationInput": {
+        "additionalProperties": false,
+        "properties": {
+          "challenge": {
+            "type": "string"
+          },
+          "proof": {
+            "items": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "challenge",
+          "proof"
+        ],
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "member",
@@ -20,6 +201,32 @@
           "root"
         ],
         "type": "string"
+      },
+      "Setting": {
+        "additionalProperties": false,
+        "properties": {
+          "effective_at": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "inherit": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "description": "Explicit null is a value. Set inherit to remove this layer's row."
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "inherit",
+          "effective_at"
+        ],
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -35,6 +242,315 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/v1/credential_issue": {
+      "post": {
+        "operationId": "credential_issue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "devices": {
+                    "items": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "type": "array"
+                  },
+                  "presentation": {
+                    "$ref": "#/components/schemas/PresentationInput"
+                  }
+                },
+                "required": [
+                  "presentation",
+                  "devices"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "credential": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "lobby": {
+                      "$ref": "#/components/schemas/Lobby"
+                    }
+                  },
+                  "required": [
+                    "lobby"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Present a passport and request admission or renewal",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
+    "/v1/gate_voucher": {
+      "post": {
+        "operationId": "gate_voucher",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "member_binding": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "items": {
+                      "format": "int32",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "valid_until": {
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id",
+                  "member_binding",
+                  "valid_until",
+                  "signature"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "handle": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "member_id": {
+                      "type": "string"
+                    },
+                    "missing": {},
+                    "passport_required": {
+                      "description": "Passport proof is always fresh when requesting a community credential.",
+                      "type": "boolean"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "steps": {
+                      "items": {},
+                      "type": "array"
+                    },
+                    "warnings": {
+                      "items": {
+                        "$ref": "#/components/schemas/LobbyWarning"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "member_id",
+                    "state",
+                    "missing",
+                    "steps",
+                    "warnings",
+                    "passport_required"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Verify a member-bound voucher",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
+    "/v1/gate_withdraw": {
+      "post": {
+        "operationId": "gate_withdraw",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "credential": {
+                    "$ref": "#/components/schemas/CredentialRequest"
+                  },
+                  "gate": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "gate",
+                  "provider",
+                  "credential"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "credential": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "lobby": {
+                      "$ref": "#/components/schemas/Lobby"
+                    }
+                  },
+                  "required": [
+                    "lobby"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Withdraw a retained community gate",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
     "/v1/global_public": {
       "post": {
         "operationId": "global_public",
@@ -255,6 +771,271 @@
         "x-scope": "global"
       }
     },
+    "/v1/handle_available": {
+      "post": {
+        "operationId": "handle_available",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "handle": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "handle"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "available"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Check a community handle",
+        "x-effect": "check",
+        "x-role": "public",
+        "x-scope": "community"
+      }
+    },
+    "/v1/handle_reserve": {
+      "post": {
+        "operationId": "handle_reserve",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "handle": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "handle"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "handle": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "member_id": {
+                      "type": "string"
+                    },
+                    "missing": {},
+                    "passport_required": {
+                      "description": "Passport proof is always fresh when requesting a community credential.",
+                      "type": "boolean"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "steps": {
+                      "items": {},
+                      "type": "array"
+                    },
+                    "warnings": {
+                      "items": {
+                        "$ref": "#/components/schemas/LobbyWarning"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "member_id",
+                    "state",
+                    "missing",
+                    "steps",
+                    "warnings",
+                    "passport_required"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Reserve a community handle",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
+    "/v1/lobby": {
+      "post": {
+        "operationId": "lobby",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "handle": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "member_id": {
+                      "type": "string"
+                    },
+                    "missing": {},
+                    "passport_required": {
+                      "description": "Passport proof is always fresh when requesting a community credential.",
+                      "type": "boolean"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "steps": {
+                      "items": {},
+                      "type": "array"
+                    },
+                    "warnings": {
+                      "items": {
+                        "$ref": "#/components/schemas/LobbyWarning"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "member_id",
+                    "state",
+                    "missing",
+                    "steps",
+                    "warnings",
+                    "passport_required"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Read enrolment and missing requirements",
+        "x-effect": "check",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
     "/v1/login_begin": {
       "post": {
         "operationId": "login_begin",
@@ -264,12 +1045,21 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
+                  "credential": {
+                    "items": {
+                      "format": "int32",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
                   "user": {
                     "type": "string"
                   }
                 },
                 "required": [
-                  "user"
+                  "user",
+                  "credential"
                 ],
                 "type": "object"
               }
@@ -324,7 +1114,7 @@
           }
         },
         "security": [],
-        "summary": "Begin account-first passkey authentication",
+        "summary": "Begin credential-first passkey authentication",
         "x-effect": "check",
         "x-role": "public",
         "x-scope": "both"
@@ -472,6 +1262,76 @@
         "x-effect": "check",
         "x-role": "authenticated",
         "x-scope": "both"
+      }
+    },
+    "/v1/passkey_revoke": {
+      "post": {
+        "operationId": "passkey_revoke",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "credential": {
+                    "items": {
+                      "format": "int32",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "credential"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Revoke a community passkey",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "community"
       }
     },
     "/v1/passport_challenge": {
@@ -636,6 +1496,472 @@
         "x-scope": "global"
       }
     },
+    "/v1/pin_change": {
+      "post": {
+        "operationId": "pin_change",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "evidence": {
+                    "items": {
+                      "format": "int32",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "field": {
+                    "type": "string"
+                  },
+                  "pin": {
+                    "$ref": "#/components/schemas/PinEnvelope"
+                  }
+                },
+                "required": [
+                  "field",
+                  "pin",
+                  "evidence"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "pin": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/PinView"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Change a fingerprint using spent-token evidence",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
+    "/v1/pin_get": {
+      "post": {
+        "operationId": "pin_get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "field"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "pin": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/PinView"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Read a sealed fingerprint",
+        "x-effect": "check",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
+    "/v1/pin_set": {
+      "post": {
+        "operationId": "pin_set",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "pin": {
+                    "$ref": "#/components/schemas/PinEnvelope"
+                  }
+                },
+                "required": [
+                  "field",
+                  "pin"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "pin": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/PinView"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Seal an initial profile fingerprint",
+        "x-effect": "record",
+        "x-role": "member",
+        "x-scope": "community"
+      }
+    },
+    "/v1/platform_set": {
+      "post": {
+        "operationId": "platform_set",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "force": {
+                    "type": "boolean"
+                  },
+                  "setting": {
+                    "$ref": "#/components/schemas/Setting"
+                  }
+                },
+                "required": [
+                  "setting",
+                  "force"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "communities": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "key_ring": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "manifest": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "policy_epoch": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revision": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revocations": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema_versions": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "settings": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "revision",
+                    "policy_epoch",
+                    "key_ring",
+                    "manifest",
+                    "settings",
+                    "schema",
+                    "schema_versions",
+                    "communities",
+                    "revocations"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Edit a platform setting or force switch",
+        "x-effect": "record",
+        "x-role": "root",
+        "x-scope": "community"
+      }
+    },
+    "/v1/presentation_challenge": {
+      "post": {
+        "operationId": "presentation_challenge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "challenge": {
+                      "type": "string"
+                    },
+                    "request": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "challenge",
+                    "request"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Begin a signed community passport presentation",
+        "x-effect": "record",
+        "x-role": "public",
+        "x-scope": "community"
+      }
+    },
     "/v1/register_begin": {
       "post": {
         "operationId": "register_begin",
@@ -652,11 +1978,15 @@
                       "null"
                     ]
                   },
-                  "ticket": {
-                    "description": "Community-only, verified passport enrolment ticket.",
-                    "type": [
-                      "string",
-                      "null"
+                  "passport": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/PresentationInput",
+                        "description": "Community-only, one-use passport presentation."
+                      },
+                      {
+                        "type": "null"
+                      }
                     ]
                   }
                 },
@@ -790,6 +2120,594 @@
         "x-effect": "record",
         "x-role": "public",
         "x-scope": "both"
+      }
+    },
+    "/v1/schema_check": {
+      "post": {
+        "operationId": "schema_check",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "schema": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "schema"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "changes": {}
+                  },
+                  "required": [
+                    "changes"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Classify profile schema changes",
+        "x-effect": "check",
+        "x-role": "admin",
+        "x-scope": "community"
+      }
+    },
+    "/v1/schema_set": {
+      "post": {
+        "operationId": "schema_set",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "schema": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "schema"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "communities": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "key_ring": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "manifest": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "policy_epoch": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revision": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revocations": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema_versions": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "settings": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "revision",
+                    "policy_epoch",
+                    "key_ring",
+                    "manifest",
+                    "settings",
+                    "schema",
+                    "schema_versions",
+                    "communities",
+                    "revocations"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Publish a profile schema",
+        "x-effect": "record",
+        "x-role": "admin",
+        "x-scope": "community"
+      }
+    },
+    "/v1/setting_set": {
+      "post": {
+        "operationId": "setting_set",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "effective_at": {
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "inherit": {
+                    "type": "boolean"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "description": "Explicit null is a value. Set inherit to remove this layer's row."
+                  }
+                },
+                "required": [
+                  "key",
+                  "value",
+                  "inherit",
+                  "effective_at"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "communities": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "key_ring": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "manifest": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "policy_epoch": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revision": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revocations": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema_versions": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "settings": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "revision",
+                    "policy_epoch",
+                    "key_ring",
+                    "manifest",
+                    "settings",
+                    "schema",
+                    "schema_versions",
+                    "communities",
+                    "revocations"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Edit a community setting",
+        "x-effect": "record",
+        "x-role": "admin",
+        "x-scope": "community"
+      }
+    },
+    "/v1/trust_changes": {
+      "post": {
+        "operationId": "trust_changes",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "format": "int64",
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "changed": {
+                      "type": "boolean"
+                    },
+                    "policy_epoch": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revision": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "revision",
+                    "policy_epoch",
+                    "changed"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Wait for a public revision announcement",
+        "x-effect": "check",
+        "x-role": "public",
+        "x-scope": "community"
+      }
+    },
+    "/v1/trust_feed": {
+      "post": {
+        "operationId": "trust_feed",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "communities": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "key_ring": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "manifest": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "policy_epoch": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revision": {
+                      "format": "int64",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "revocations": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "schema_versions": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "settings": {
+                      "items": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "revision",
+                    "policy_epoch",
+                    "key_ring",
+                    "manifest",
+                    "settings",
+                    "schema",
+                    "schema_versions",
+                    "communities",
+                    "revocations"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Fixed redacted error category"
+          }
+        },
+        "security": [],
+        "summary": "Read signed public trust snapshots",
+        "x-effect": "check",
+        "x-role": "public",
+        "x-scope": "community"
       }
     }
   }

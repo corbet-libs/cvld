@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/v1/credential_issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Present a passport and request admission or renewal */
+        post: operations["credential_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/gate_voucher": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify a member-bound voucher */
+        post: operations["gate_voucher"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/gate_withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a retained community gate */
+        post: operations["gate_withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/global_public": {
         parameters: {
             query?: never;
@@ -55,6 +106,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/handle_available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check a community handle */
+        post: operations["handle_available"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/handle_reserve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reserve a community handle */
+        post: operations["handle_reserve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lobby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read enrolment and missing requirements */
+        post: operations["lobby"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/login_begin": {
         parameters: {
             query?: never;
@@ -64,7 +166,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Begin account-first passkey authentication */
+        /** Begin credential-first passkey authentication */
         post: operations["login_begin"];
         delete?: never;
         options?: never;
@@ -106,6 +208,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/passkey_revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke a community passkey */
+        post: operations["passkey_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/passport_challenge": {
         parameters: {
             query?: never;
@@ -134,6 +253,91 @@ export interface paths {
         put?: never;
         /** Issue a blind passport after global policy checks */
         post: operations["passport_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pin_change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change a fingerprint using spent-token evidence */
+        post: operations["pin_change"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pin_get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read a sealed fingerprint */
+        post: operations["pin_get"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pin_set": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Seal an initial profile fingerprint */
+        post: operations["pin_set"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform_set": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit a platform setting or force switch */
+        post: operations["platform_set"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/presentation_challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin a signed community passport presentation */
+        post: operations["presentation_challenge"];
         delete?: never;
         options?: never;
         head?: never;
@@ -174,14 +378,148 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/schema_check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Classify profile schema changes */
+        post: operations["schema_check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/schema_set": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish a profile schema */
+        post: operations["schema_set"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/setting_set": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit a community setting */
+        post: operations["setting_set"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/trust_changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Wait for a public revision announcement */
+        post: operations["trust_changes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/trust_feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read signed public trust snapshots */
+        post: operations["trust_feed"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CredentialRequest: {
+            devices: number[][];
+            presentation: components["schemas"]["PresentationInput"];
+        };
         /** @enum {string} */
         Error: "invalid" | "unauthorized" | "forbidden" | "wrong_host" | "throttled" | "refused" | "unavailable";
+        Lobby: {
+            handle?: string | null;
+            member_id: string;
+            missing: unknown;
+            /** @description Passport proof is always fresh when requesting a community credential. */
+            passport_required: boolean;
+            state: string;
+            steps: unknown[];
+            warnings: components["schemas"]["LobbyWarning"][];
+        };
+        LobbyWarning: {
+            /** Format: int64 */
+            deadline: number;
+            /** @enum {string} */
+            kind: "registration_expires";
+        } | {
+            /** @enum {string} */
+            kind: "add_second_device_or_synced_passkey";
+        };
+        /** @description Wire schema of cmbr's versioned pin capability; cmbr validates every binding. */
+        PinEnvelope: {
+            community: string;
+            field: string;
+            fingerprint: number[];
+            member: string;
+            /** Format: int32 */
+            version: number;
+        };
+        PinView: {
+            fingerprint: number[];
+            /** Format: int64 */
+            revision: number;
+        };
+        PresentationInput: {
+            challenge: string;
+            proof: number[];
+        };
         /** @enum {string} */
         Role: "member" | "admin" | "root";
+        Setting: {
+            /** Format: int64 */
+            effective_at: number;
+            inherit: boolean;
+            key: string;
+            /** @description Explicit null is a value. Set inherit to remove this layer's row. */
+            value: unknown;
+        };
     };
     responses: never;
     parameters: never;
@@ -191,6 +529,139 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    credential_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    devices: number[][];
+                    presentation: components["schemas"]["PresentationInput"];
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        credential?: number[] | null;
+                        lobby: components["schemas"]["Lobby"];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    gate_voucher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    id: string;
+                    member_binding: string;
+                    signature: number[];
+                    /** Format: int64 */
+                    valid_until: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        handle?: string | null;
+                        member_id: string;
+                        missing: unknown;
+                        /** @description Passport proof is always fresh when requesting a community credential. */
+                        passport_required: boolean;
+                        state: string;
+                        steps: unknown[];
+                        warnings: components["schemas"]["LobbyWarning"][];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    gate_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    credential: components["schemas"]["CredentialRequest"];
+                    gate: string;
+                    provider: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        credential?: number[] | null;
+                        lobby: components["schemas"]["Lobby"];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
     global_public: {
         parameters: {
             query?: never;
@@ -306,6 +777,135 @@ export interface operations {
             };
         };
     };
+    handle_available: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    handle: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        available: boolean;
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    handle_reserve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    handle: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        handle?: string | null;
+                        member_id: string;
+                        missing: unknown;
+                        /** @description Passport proof is always fresh when requesting a community credential. */
+                        passport_required: boolean;
+                        state: string;
+                        steps: unknown[];
+                        warnings: components["schemas"]["LobbyWarning"][];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    lobby: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        handle?: string | null;
+                        member_id: string;
+                        missing: unknown;
+                        /** @description Passport proof is always fresh when requesting a community credential. */
+                        passport_required: boolean;
+                        state: string;
+                        steps: unknown[];
+                        warnings: components["schemas"]["LobbyWarning"][];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
     login_begin: {
         parameters: {
             query?: never;
@@ -316,6 +916,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    credential: number[];
                     user: string;
                 };
             };
@@ -426,6 +1027,43 @@ export interface operations {
             };
         };
     };
+    passkey_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    credential: number[];
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
     passport_challenge: {
         parameters: {
             query?: never;
@@ -503,6 +1141,214 @@ export interface operations {
             };
         };
     };
+    pin_change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    evidence: number[];
+                    field: string;
+                    pin: components["schemas"]["PinEnvelope"];
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pin?: components["schemas"]["PinView"] | null;
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    pin_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    field: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pin?: components["schemas"]["PinView"] | null;
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    pin_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    field: string;
+                    pin: components["schemas"]["PinEnvelope"];
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pin?: components["schemas"]["PinView"] | null;
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    platform_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    force: boolean;
+                    setting: components["schemas"]["Setting"];
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        communities: number[];
+                        key_ring: number[];
+                        manifest: number[];
+                        /** Format: int64 */
+                        policy_epoch: number;
+                        /** Format: int64 */
+                        revision: number;
+                        revocations: number[];
+                        schema: number[];
+                        schema_versions: number[];
+                        settings: number[];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    presentation_challenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        challenge: string;
+                        request: number[];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
     register_begin: {
         parameters: {
             query?: never;
@@ -515,8 +1361,7 @@ export interface operations {
                 "application/json": {
                     /** @description Required for an operator; never a role supplied by the caller. */
                     bootstrap?: string | null;
-                    /** @description Community-only, verified passport enrolment ticket. */
-                    ticket?: string | null;
+                    passport?: components["schemas"]["PresentationInput"] | null;
                 };
             };
         };
@@ -571,6 +1416,239 @@ export interface operations {
                 content: {
                     "application/json": {
                         user: string;
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    schema_check: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    schema: Record<string, never>;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        changes: unknown;
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    schema_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    schema: Record<string, never>;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        communities: number[];
+                        key_ring: number[];
+                        manifest: number[];
+                        /** Format: int64 */
+                        policy_epoch: number;
+                        /** Format: int64 */
+                        revision: number;
+                        revocations: number[];
+                        schema: number[];
+                        schema_versions: number[];
+                        settings: number[];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    setting_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: int64 */
+                    effective_at: number;
+                    inherit: boolean;
+                    key: string;
+                    /** @description Explicit null is a value. Set inherit to remove this layer's row. */
+                    value: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        communities: number[];
+                        key_ring: number[];
+                        manifest: number[];
+                        /** Format: int64 */
+                        policy_epoch: number;
+                        /** Format: int64 */
+                        revision: number;
+                        revocations: number[];
+                        schema: number[];
+                        schema_versions: number[];
+                        settings: number[];
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    trust_changes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: int64 */
+                    revision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        changed: boolean;
+                        /** Format: int64 */
+                        policy_epoch: number;
+                        /** Format: int64 */
+                        revision: number;
+                    };
+                };
+            };
+            /** @description Fixed redacted error category */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+    };
+    trust_feed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        communities: number[];
+                        key_ring: number[];
+                        manifest: number[];
+                        /** Format: int64 */
+                        policy_epoch: number;
+                        /** Format: int64 */
+                        revision: number;
+                        revocations: number[];
+                        schema: number[];
+                        schema_versions: number[];
+                        settings: number[];
                     };
                 };
             };
