@@ -146,6 +146,31 @@ impl Door {
             }),
         })
     }
+    /// Service maintenance uses only current state, without member activity logs.
+    pub async fn maintain(&self) -> Result<()> {
+        let now = self.inner.clock.now();
+        let mut global = self.inner.global.lock().await;
+        global
+            .facade
+            .prune_challenges(now, 100)
+            .await
+            .map_err(|_| Error::Unavailable)?;
+        let fresh = global
+            .facade
+            .key_ring()
+            .map_err(|_| Error::Unavailable)?
+            .verify(
+                &global.public.status,
+                cglb::csgn::Kind::RevocationListSnapshot,
+                now,
+            )
+            .map(|s| s.valid_until() > now + global.publication_seconds / 2)
+            .unwrap_or(false);
+        if !fresh {
+            global.refresh(now).await?;
+        }
+        Ok(())
+    }
     fn auth(&self, host: &str) -> Result<Arc<Mutex<Auth>>> {
         self.inner.hosts.get(host).cloned().ok_or(Error::WrongHost)
     }

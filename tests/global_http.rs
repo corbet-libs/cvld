@@ -195,3 +195,62 @@ async fn registration_requires_user_verification_and_ceremonies_are_single_use()
         401
     );
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn valid_signature_without_uv_cannot_create_a_session() {
+    use webauthn_authenticator_rs::AuthenticatorBackend;
+    let service = global(50).await;
+    let mut member = enrol(&service, WALLET, None).await;
+    let client = client(&service, WALLET, None);
+    let begin: Ceremony = serde_json::from_value(
+        client
+            .call("login_begin", json!({"user": member.user}))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let mut options = begin.options;
+    options["publicKey"]["userVerification"] = json!("discouraged");
+    let challenge: cpky::RequestChallengeResponse = serde_json::from_value(options).unwrap();
+    let credential = member
+        .authenticator
+        .perform_auth(
+            cpky::Url::parse(&format!("https://{WALLET}")).unwrap(),
+            challenge.public_key,
+            300_000,
+        )
+        .unwrap();
+    let body = json!({"ceremony":begin.ceremony,"credential":credential});
+    assert_eq!(
+        call_status(&service, WALLET, None, "login_finish", body.clone()).await,
+        401
+    );
+    assert_eq!(
+        call_status(&service, WALLET, None, "login_finish", body).await,
+        401
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn maintenance_refreshes_public_expiry_without_a_member_query() {
+    let service = global(50).await;
+    let client = client(&service, WALLET, None);
+    let before: GlobalPublic =
+        serde_json::from_value(client.call("global_public", json!({})).await.unwrap()).unwrap();
+    service.clock.set(NOW + 2000);
+    service.door.maintain().await.unwrap();
+    let after: GlobalPublic =
+        serde_json::from_value(client.call("global_public", json!({})).await.unwrap()).unwrap();
+    assert_ne!(before.status, after.status);
+    let ring = csgn::KeyRing::from_cbor(&after.key_ring).unwrap();
+    let verified = ring
+        .verify(
+            &after.status,
+            csgn::Kind::RevocationListSnapshot,
+            NOW + 2000,
+        )
+        .unwrap();
+    let status: cglb::Status = serde_json::from_slice(verified.payload()).unwrap();
+    assert_eq!(status.epoch, 1);
+    assert_eq!(status.policy_revision, 1);
+}

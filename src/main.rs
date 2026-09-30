@@ -32,6 +32,15 @@ async fn run() -> Result<()> {
                 "global" => Door::global(config, Arc::new(SystemClock)).await?,
                 _ => return Err(Error::Unavailable),
             };
+            let maintenance = door.clone();
+            let task = tokio::spawn(async move {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+                loop {
+                    interval.tick().await;
+                    // A failed refresh leaves the old signed expiry intact; consumers fail closed.
+                    let _ = maintenance.maintain().await;
+                }
+            });
             let listener = tokio::net::TcpListener::bind(listen)
                 .await
                 .map_err(|_| Error::Unavailable)?;
@@ -41,6 +50,7 @@ async fn run() -> Result<()> {
                 })
                 .await
                 .map_err(|_| Error::Unavailable)?;
+            task.abort();
         }
         _ => {
             let token = matches
