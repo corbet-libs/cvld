@@ -7,7 +7,7 @@ use support::*;
 #[tokio::test(flavor = "multi_thread")]
 async fn wallet_passkey_blind_passport_and_host_role_boundaries() {
     let service = global(100).await;
-    let member = enrol(&service, WALLET, None).await;
+    let mut member = enrol(&service, WALLET, None).await;
     let client = client(&service, WALLET, Some(&member.session));
     client.call("development_gate", json!({})).await.unwrap();
     let public: GlobalPublic =
@@ -27,6 +27,25 @@ async fn wallet_passkey_blind_passport_and_host_role_boundaries() {
     let challenge = cpsd::IssuanceChallenge::from_bytes(challenge.bytes.try_into().unwrap());
     let (request, pending) = cpsd::request_issue(&mut rng, &secret, &issuer, &challenge).unwrap();
     let body = json!({"challenge":challenge.to_bytes().to_vec(), "request":request.to_bytes()});
+    let other_session = login(
+        &service,
+        WALLET,
+        &mut member.authenticator,
+        &member.user,
+        &member.credential,
+    )
+    .await;
+    assert_eq!(
+        call_status(
+            &service,
+            WALLET,
+            Some(&other_session),
+            "passport_issue",
+            body.clone()
+        )
+        .await,
+        409
+    );
     let issued: Bytes =
         serde_json::from_value(client.call("passport_issue", body.clone()).await.unwrap()).unwrap();
     let passport = pending

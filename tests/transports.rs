@@ -51,3 +51,53 @@ async fn cli_and_official_mcp_client_call_the_running_http_service() {
     assert_eq!(rejected.is_error, Some(true));
     mcp.cancel().await.unwrap();
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn cli_and_mcp_use_community_sessions_and_the_same_trust_feed() {
+    let global = global(100).await;
+    let (_, passport, public) = wallet_passport(&global).await;
+    let service = community("transport", &public).await;
+    let host = "api.transport.example.test";
+    let member = enrol_community(&service, host, &passport).await;
+    let session_path = service.dir.path().join("community.session");
+    std::fs::write(&session_path, &member.session).unwrap();
+    let mut command = Command::new(env!("CARGO_BIN_EXE_cvld"));
+    command
+        .args(["--url", &service.base, "--host", host, "--session-file"])
+        .arg(&session_path)
+        .arg("lobby");
+    let output = command.output().await.unwrap();
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+    let lobby: cvld::api::Lobby = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(
+        lobby.member_id,
+        passport
+            .pseudonym(&cpsd::CommunityId::new("transport").unwrap())
+            .to_hex()
+    );
+    assert!(!lobby.warnings.is_empty());
+    let mut command = Command::new(env!("CARGO_BIN_EXE_cvld"));
+    command
+        .args(["--url", &service.base, "--host", host, "--session-file"])
+        .arg(&session_path)
+        .arg("mcp");
+    let mcp = ().serve(TokioChildProcess::new(command).unwrap()).await.unwrap();
+    let result = mcp
+        .call_tool(CallToolRequestParams::new("trust_feed").with_arguments(serde_json::Map::new()))
+        .await
+        .unwrap();
+    assert_ne!(result.is_error, Some(true));
+    let feed: cvld::api::TrustFeed = result.into_typed().unwrap();
+    let ring = csgn::KeyRing::from_cbor(&feed.key_ring).unwrap();
+    ring.verify(&feed.manifest, csgn::Kind::SettingsSnapshot, NOW)
+        .unwrap();
+    let denied = mcp
+        .call_tool(
+            CallToolRequestParams::new("global_public").with_arguments(serde_json::Map::new()),
+        )
+        .await
+        .unwrap();
+    assert_eq!(denied.is_error, Some(true));
+    mcp.cancel().await.unwrap();
+}
