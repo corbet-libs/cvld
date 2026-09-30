@@ -57,6 +57,9 @@ Configuration and secret file paths are explicit. The service does not search fo
 operator credentials, use a secret store implicitly or provision a deployment.
 It uses a generic HTTP User-Agent. No client credential is sent across redirects.
 Database access is only through crlt; the pool defaults to one connection.
+A single service-identity row binds the physical database to its configured
+service and scope. Reusing a community database under another community name
+is refused; this row contains no member information.
 Maintenance prunes expired global challenges and refreshes signed public status.
 An unsuccessful refresh leaves the old expiry in force rather than extending it.
 

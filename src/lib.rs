@@ -9,5 +9,6 @@ pub mod cli;
 pub mod config;
 pub mod error;
 mod global;
+mod identity;
 pub mod mcp;
 pub mod service;
