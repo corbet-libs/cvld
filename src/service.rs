@@ -39,7 +39,7 @@ struct Inner {
     throttle: cthl::Throttle<cthl::MemoryStore>,
     clock: Arc<dyn Clock>,
 }
-pub struct Context {
+pub(crate) struct Context {
     pub host: String,
     pub grant: Option<Grant>,
     pub token: Option<String>,
@@ -174,7 +174,7 @@ impl Door {
     fn auth(&self, host: &str) -> Result<Arc<Mutex<Auth>>> {
         self.inner.hosts.get(host).cloned().ok_or(Error::WrongHost)
     }
-    pub async fn authorize(&self, action: &Action, headers: &HeaderMap) -> Result<Context> {
+    pub(crate) async fn authorize(&self, action: &Action, headers: &HeaderMap) -> Result<Context> {
         // Service-wide quotas cannot be evaded with forged IPs, handles or fresh tokens.
         if !matches!(
             self.inner.throttle.check(b"aggregate", action.name).await,
@@ -227,42 +227,50 @@ impl Door {
             now,
         })
     }
-    pub async fn register_begin(&self, ctx: Context, request: RegisterStart) -> Result<Ceremony> {
+    pub(crate) async fn register_begin(
+        &self,
+        ctx: Context,
+        request: RegisterStart,
+    ) -> Result<Ceremony> {
         self.auth(&ctx.host)?
             .lock()
             .await
             .register_begin(request, ctx.now)
             .await
     }
-    pub async fn register_finish(&self, ctx: Context, request: RegisterFinish) -> Result<User> {
+    pub(crate) async fn register_finish(
+        &self,
+        ctx: Context,
+        request: RegisterFinish,
+    ) -> Result<User> {
         self.auth(&ctx.host)?
             .lock()
             .await
             .register_finish(request, ctx.now)
             .await
     }
-    pub async fn login_begin(&self, ctx: Context, request: User) -> Result<Ceremony> {
+    pub(crate) async fn login_begin(&self, ctx: Context, request: User) -> Result<Ceremony> {
         self.auth(&ctx.host)?
             .lock()
             .await
             .login_begin(request, ctx.now)
             .await
     }
-    pub async fn login_finish(&self, ctx: Context, request: LoginFinish) -> Result<Session> {
+    pub(crate) async fn login_finish(&self, ctx: Context, request: LoginFinish) -> Result<Session> {
         self.auth(&ctx.host)?
             .lock()
             .await
             .login_finish(request, ctx.now)
             .await
     }
-    pub async fn logout(&self, ctx: Context, _: Empty) -> Result<Empty> {
+    pub(crate) async fn logout(&self, ctx: Context, _: Empty) -> Result<Empty> {
         self.auth(&ctx.host)?
             .lock()
             .await
             .logout(ctx.token.as_deref().ok_or(Error::Unauthorized)?);
         Ok(Empty {})
     }
-    pub async fn global_public(&self, _: Context, _: Empty) -> Result<GlobalPublic> {
+    pub(crate) async fn global_public(&self, _: Context, _: Empty) -> Result<GlobalPublic> {
         let global = self.inner.global.lock().await;
         Ok(GlobalPublic {
             key_ring: global.public.key_ring.clone(),
@@ -270,7 +278,7 @@ impl Door {
             status: global.public.status.clone(),
         })
     }
-    pub async fn passport_challenge(&self, ctx: Context, _: Empty) -> Result<Bytes> {
+    pub(crate) async fn passport_challenge(&self, ctx: Context, _: Empty) -> Result<Bytes> {
         let global = self.inner.global.lock().await;
         let challenge = global
             .facade
@@ -286,7 +294,11 @@ impl Door {
             bytes: challenge.to_bytes().to_vec(),
         })
     }
-    pub async fn passport_issue(&self, ctx: Context, request: PassportIssue) -> Result<Bytes> {
+    pub(crate) async fn passport_issue(
+        &self,
+        ctx: Context,
+        request: PassportIssue,
+    ) -> Result<Bytes> {
         let challenge = cpsd::IssuanceChallenge::from_bytes(
             request.challenge.try_into().map_err(|_| Error::Invalid)?,
         );
@@ -309,7 +321,7 @@ impl Door {
         })
     }
     #[cfg(feature = "development-gate")]
-    pub async fn development_gate(&self, ctx: Context, _: Empty) -> Result<Empty> {
+    pub(crate) async fn development_gate(&self, ctx: Context, _: Empty) -> Result<Empty> {
         let global = self.inner.global.lock().await;
         let subject = ctx.subject()?;
         global
@@ -324,7 +336,7 @@ impl Door {
             .map_err(|_| Error::Refused)?;
         Ok(Empty {})
     }
-    pub async fn global_warn(&self, _: Context, request: User) -> Result<Empty> {
+    pub(crate) async fn global_warn(&self, _: Context, request: User) -> Result<Empty> {
         self.inner
             .global
             .lock()
@@ -335,7 +347,7 @@ impl Door {
             .map_err(|_| Error::Refused)?;
         Ok(Empty {})
     }
-    pub async fn global_suspend(&self, ctx: Context, request: Suspend) -> Result<Empty> {
+    pub(crate) async fn global_suspend(&self, ctx: Context, request: Suspend) -> Result<Empty> {
         let mut global = self.inner.global.lock().await;
         global
             .facade
