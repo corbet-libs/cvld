@@ -50,6 +50,7 @@ pub struct Voucher {
 pub struct Withdraw {
     pub gate: String,
     pub provider: String,
+    pub credential: CredentialRequest,
 }
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]

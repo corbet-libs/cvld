@@ -56,21 +56,21 @@ impl Door {
         community.voucher(ctx.member()?, request, ctx.now).await?;
         community.lobby(ctx.member()?, ctx.now).await
     }
-    pub(crate) async fn gate_withdraw(&self, ctx: Context, request: Withdraw) -> Result<Lobby> {
-        let community = self.community_backend()?.lock().await;
-        let row = community
-            .facade
-            .membership()
-            .resume(ctx.member()?)
+    pub(crate) async fn gate_withdraw(
+        &self,
+        ctx: Context,
+        request: Withdraw,
+    ) -> Result<CredentialResponse> {
+        self.community_backend()?
+            .lock()
             .await
-            .map_err(|_| Error::Refused)?;
-        community
-            .facade
-            .gates()
-            .withdraw(row.subject(), &request.gate, &request.provider)
+            .issue(
+                ctx.member()?,
+                request.credential,
+                Some((request.gate, request.provider)),
+                ctx.now,
+            )
             .await
-            .map_err(|_| Error::Refused)?;
-        community.lobby(ctx.member()?, ctx.now).await
     }
     pub(crate) async fn credential_issue(
         &self,
@@ -80,7 +80,7 @@ impl Door {
         self.community_backend()?
             .lock()
             .await
-            .issue(ctx.member()?, request, ctx.now)
+            .issue(ctx.member()?, request, None, ctx.now)
             .await
     }
     pub(crate) async fn pin_set(&self, ctx: Context, request: PinRequest) -> Result<PinResponse> {

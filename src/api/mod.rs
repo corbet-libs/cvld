@@ -239,7 +239,7 @@ actions! {
     handle_available(Handle) -> Available, Public, Community, Check, "Check a community handle";
     handle_reserve(Handle) -> Lobby, Member, Community, Record, "Reserve a community handle";
     gate_voucher(Voucher) -> Lobby, Member, Community, Record, "Verify a member-bound voucher";
-    gate_withdraw(Withdraw) -> Lobby, Member, Community, Record, "Withdraw a retained community gate";
+    gate_withdraw(Withdraw) -> CredentialResponse, Member, Community, Record, "Withdraw a retained community gate";
     credential_issue(CredentialRequest) -> CredentialResponse, Member, Community, Record, "Present a passport and request admission or renewal";
     pin_set(PinRequest) -> PinResponse, Member, Community, Record, "Seal an initial profile fingerprint";
     pin_get(Field) -> PinResponse, Member, Community, Check, "Read a sealed fingerprint";

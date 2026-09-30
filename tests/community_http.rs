@@ -111,12 +111,6 @@ async fn two_communities_admission_policy_lapse_and_release_over_http() {
         assert_ne!(lobby.member_id, wallet.user);
         ids.push(lobby.member_id);
         assert!(
-            issue_community(service, host, member, &passport)
-                .await
-                .credential
-                .is_none()
-        );
-        assert!(
             client
                 .call("handle_reserve", json!({"handle":"admin"}))
                 .await
@@ -126,6 +120,12 @@ async fn two_communities_admission_policy_lapse_and_release_over_http() {
             .call("handle_reserve", json!({"handle":"member_one"}))
             .await
             .unwrap();
+        assert!(
+            issue_community(service, host, member, &passport)
+                .await
+                .credential
+                .is_none()
+        );
         let sealed = cmnt::cmbr::PinV2::seal(
             &cpns::FingerprintContext {
                 community: name,
@@ -276,15 +276,17 @@ async fn two_communities_admission_policy_lapse_and_release_over_http() {
         .unwrap();
     let live = issue_community(&alpha, ah, &a, &passport).await;
     assert!(live.credential.is_some());
-    ac.call("gate_withdraw", json!({"gate":"cvch","provider":"sponsor"}))
-        .await
-        .unwrap();
-    let lapsed = issue_community(&alpha, ah, &a, &passport).await;
+    let before_withdraw: TrustFeed =
+        serde_json::from_value(ac.call("trust_feed", json!({})).await.unwrap()).unwrap();
+    let proof = presentation(&alpha, ah, Some(&a.session), &passport).await;
+    let lapsed: CredentialResponse = serde_json::from_value(ac.call("gate_withdraw", json!({
+        "gate":"cvch", "provider":"sponsor", "credential":{"presentation":proof,"devices":vec![[42u8;32]]}
+    })).await.unwrap()).unwrap();
     assert!(lapsed.credential.is_none());
     assert_eq!(lapsed.lobby.state, "lapsed");
     let lapsed_feed: TrustFeed =
         serde_json::from_value(ac.call("trust_feed", json!({})).await.unwrap()).unwrap();
-    assert!(lapsed_feed.policy_epoch > forced.policy_epoch);
+    assert!(lapsed_feed.policy_epoch > before_withdraw.policy_epoch);
     // A failed gate is recoverable; an epoch invalidation must not become a permanent ban.
     ac.call(
         "gate_voucher",
@@ -337,4 +339,29 @@ async fn two_communities_admission_policy_lapse_and_release_over_http() {
             .await
             .is_err()
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn community_public_and_expensive_actions_have_aggregate_quotas() {
+    let global = global(100).await;
+    let public: GlobalPublic = serde_json::from_value(
+        client(&global, WALLET, None)
+            .call("global_public", json!({}))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let community = community_with_burst("quota", &public, 1).await;
+    let host = "api.quota.example.test";
+    for (action, body) in [
+        ("handle_available", json!({"handle":"available_one"})),
+        ("register_begin", json!({})),
+        ("presentation_challenge", json!({})),
+    ] {
+        assert_ne!(
+            call_status(&community, host, None, action, body.clone()).await,
+            429
+        );
+        assert_eq!(call_status(&community, host, None, action, body).await, 429);
+    }
 }

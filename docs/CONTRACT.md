@@ -105,6 +105,8 @@ cgts's gate steps, the canonical handle and mandatory no-return warnings. It
 creates no visit record and does not lapse a member merely because a fresh
 passport was not supplied to this read. Voucher verification and atomic
 single-use storage belong to cgts/cvch. Handles use cmbr's cgrd/crgs operations.
+Withdrawing a gate supplies a fresh passport and immediately reevaluates
+admission through cmnt; an absent required gate lapses the member.
 Pins contain only a context-bound v2 digest; schema values and salts stay on
 devices. A changed digest needs the owning facade's spent-token capability.
 

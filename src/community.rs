@@ -614,6 +614,7 @@ impl CommunityService {
         &mut self,
         auth: &cpky::Authentication,
         request: CredentialRequest,
+        withdrawal: Option<(String, String)>,
         now: u64,
     ) -> Result<CredentialResponse> {
         use chrono::Datelike;
@@ -635,7 +636,7 @@ impl CommunityService {
             .map_err(|_| Error::Invalid)?;
         let result = self
             .facade
-            .finish(
+            .finish_with(
                 &mut cpsd::rand::rngs::OsRng,
                 &challenge.value,
                 &proof,
@@ -645,6 +646,12 @@ impl CommunityService {
                     lease,
                 },
                 now,
+                async |gates, context| {
+                    if let Some((gate, provider)) = withdrawal {
+                        gates.withdraw(context.subject, &gate, &provider).await?;
+                    }
+                    Ok(Vec::new())
+                },
             )
             .await
             .map_err(|_| Error::Refused)?;

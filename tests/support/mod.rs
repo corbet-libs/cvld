@@ -371,6 +371,9 @@ pub fn community_schema(community: &str, version: u32) -> cplc::cshm::Schema {
         "public":[{"id":"restricted","label":"Restricted", "kind":{"type":"yes_no"},"required":false,"filterable":false,"change_preset":"stable","no_contact_details":false}],"private":[]})).unwrap()
 }
 pub async fn community(name: &str, public: &GlobalPublic) -> Running {
+    community_with_burst(name, public, 100).await
+}
+pub async fn community_with_burst(name: &str, public: &GlobalPublic, burst: u32) -> Running {
     let dir = tempfile::tempdir().unwrap();
     let config = CommunityConfig {
         listen: "127.0.0.1:0".into(),
@@ -414,7 +417,7 @@ pub async fn community(name: &str, public: &GlobalPublic) -> Running {
         lease_months: 1,
         session_seconds: 600,
         pending_capacity: 100,
-        throttle_burst: 100,
+        throttle_burst: burst,
         throttle_interval_ms: 60_000,
         publication_seconds: 2 * 86_400,
         signer_max_seconds: 10 * 366 * 86_400,
