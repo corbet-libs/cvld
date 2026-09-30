@@ -28,7 +28,8 @@ pub struct Grant {
     pub user: Uuid,
     pub role: Role,
     pub expires: u64,
-    credential: cpky::CredentialID,
+    pub(crate) credential: cpky::CredentialID,
+    pub(crate) session_id: [u8; 32],
 }
 /// Random opaque bearer capability, without embedded member information.
 pub fn token() -> String {
@@ -74,7 +75,7 @@ impl Auth {
         if self.registrations.len() >= self.capacity {
             return Err(Error::Throttled);
         }
-        if request.ticket.is_some() {
+        if request.passport.is_some() {
             return Err(Error::Invalid);
         }
         let user = if let Some(operator) = self.operator {
@@ -148,21 +149,22 @@ impl Auth {
             user: pending.user.to_string(),
         })
     }
-    pub async fn login_begin(&mut self, user: User, now: u64) -> Result<Ceremony> {
+    pub async fn login_begin(&mut self, request: LoginStart, now: u64) -> Result<Ceremony> {
         self.prune(now);
         if self.logins.len() >= self.capacity {
             return Err(Error::Throttled);
         }
-        let user = Uuid::parse_str(&user.user).map_err(|_| Error::Invalid)?;
+        let user = Uuid::parse_str(&request.user).map_err(|_| Error::Invalid)?;
         if self.operator.is_some_and(|operator| operator != user) {
             return Err(Error::Unauthorized);
         }
         let passkeys = self.passkeys.clone();
-        let (options, state) =
-            tokio::task::spawn_blocking(move || passkeys.start_authentication(user))
-                .await
-                .map_err(|_| Error::Unavailable)?
-                .map_err(|_| Error::Unauthorized)?;
+        let (options, state) = tokio::task::spawn_blocking(move || {
+            passkeys.start_authentication_for(user, &request.credential.into())
+        })
+        .await
+        .map_err(|_| Error::Unavailable)?
+        .map_err(|_| Error::Unauthorized)?;
         let ceremony = token();
         self.logins.insert(
             ceremony.clone(),
@@ -204,6 +206,7 @@ impl Auth {
                 role: self.role,
                 expires,
                 credential,
+                session_id: rand::random(),
             },
         );
         Ok(Session {

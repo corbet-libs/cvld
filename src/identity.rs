@@ -1,6 +1,6 @@
 //! Bind a physical service database to one configured role and community.
 use crate::error::{Error, Result};
-use cglb::crlt::{Db, params};
+use crlt::{Db, params};
 
 pub const SCHEMA: &str = "CREATE TABLE cvld_service (
     community_id TEXT NOT NULL,

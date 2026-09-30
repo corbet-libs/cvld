@@ -12,8 +12,11 @@ default = []
 development-gate = ["cglb/development-gate"]
 
 [dependencies]
-cglb = { git = "https://github.com/corbet-libs/cglb", rev = "e762c383e1eea66c8dcc5415a55c9f88af2edc69" }
-cpky = { git = "https://github.com/corbet-foss/cpky", rev = "ae52e4dbf9c7aa954991927e9ece9f70c81ac5ff" }
+cpsd = { git = "https://github.com/corbet-foss/cpsd", rev = "b60f2bbff04dbe0a93cb41992006b06dafc798c3", default-features = false, features = ["storage"] }
+crlt = { git = "https://github.com/corbet-foss/crlt", rev = "6b94dacd7fa04aa8847c62c6471a1fc5c0f6c9dc" }
+csgn = { git = "https://github.com/corbet-foss/csgn", rev = "d7203f310c3c129c3f67ef4ef3e34ccf0ae8c93b", features = ["libsql"] }
+cglb = { git = "https://github.com/corbet-libs/cglb", rev = "03d1d8d9437c4f9547e788130cfe83c2a33188ff" }
+cpky = { git = "https://github.com/corbet-foss/cpky", rev = "e0bea9b1a6425fe17b65257e747d2c4621078845" }
 cthl = { git = "https://github.com/corbet-foss/cthl", rev = "7f1a38de4285dee4b15ee8f9e82c1cb257513644" }
 axum = "0.8.9"
 tower-http = { version = "0.6.11", features = ["cors"] }

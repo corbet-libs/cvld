@@ -63,7 +63,11 @@ request a role. Registering a passkey requires a real WebAuthn ceremony with
 user verification. No key generation, credential discovery or deployment runs
 as a side effect of starting the door.
 Choose the passport cohort's common expiry at a UTC-day boundary, as required
-by the community gate facade. Snapshot refresh deadlines may be shorter.
+by the community gate facade. Global status publication uses whole UTC days
+and a configured lifetime of at least two days. Each blind issuance challenge
+is bound to the verified session with an independent random identifier; bearer
+tokens are never written into issuance storage. Login supplies both the account
+UUID and credential ID, keeping server-side credential lists private.
 
 `development-gate` is an opt-in Cargo feature for development builds. Enabling
 it in a release build is a compilation error, including releases with debug

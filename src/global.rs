@@ -3,12 +3,10 @@ use crate::{
     config::Config,
     error::{Error, Result},
 };
-use cglb::{
-    Global, cpsd,
-    crlt::{Db, Migration},
-    csgn,
-};
-pub type Facade = Global<cglb::storage::LibsqlStore, csgn::LibsqlStore>;
+use cglb::Global;
+use crlt::{Db, Migration};
+pub type Facade =
+    Global<cglb::storage::LibsqlStore, csgn::LibsqlStore, cpsd::storage::libsql::LibsqlStore>;
 pub struct GlobalService {
     pub facade: Facade,
     pub public: GlobalPublic,
@@ -24,6 +22,17 @@ impl GlobalService {
             Migration::new(2, "signing", csgn::SCHEMA),
             Migration::new(3, "passkeys", cpky::LIBSQL_SCHEMA),
             Migration::new(4, "service", crate::identity::SCHEMA),
+            Migration::new(5, "passport-challenges", cpsd::storage::libsql::SCHEMA),
+            Migration::new(
+                6,
+                "passport-issuance",
+                cpsd::storage::libsql::ISSUANCE_SCHEMA,
+            ),
+            Migration::new(
+                7,
+                "passport-owners",
+                cpsd::storage::libsql::ISSUANCE_UNIQUENESS_SCHEMA,
+            ),
         ])
         .await
         .map_err(|_| Error::Unavailable)?;
@@ -42,7 +51,7 @@ impl GlobalService {
                 store,
                 "cglb:global",
                 secret,
-                now,
+                now / 86_400 * 86_400,
                 config.signer_max_seconds,
             )
             .await
@@ -65,6 +74,12 @@ impl GlobalService {
         };
         let mut facade = Global::open(
             cglb::storage::LibsqlStore::new(db, "global").map_err(|_| Error::Invalid)?,
+            cpsd::storage::libsql::LibsqlStore::new(
+                db,
+                cpsd::CommunityId::new("global").map_err(|_| Error::Invalid)?,
+                config.pending_capacity,
+            )
+            .map_err(|_| Error::Unavailable)?,
             issuer,
             signer,
             cglb::FingerprintKey::from_bytes(&mut Config::seed(&config.uniqueness_key_file)?),
@@ -96,7 +111,7 @@ impl GlobalService {
         let development_expiry = {
             let ring = facade.key_ring().map_err(|_| Error::Unavailable)?;
             let verified = ring
-                .verify(&status, csgn::Kind::RevocationListSnapshot, now)
+                .verify(&status, csgn::Kind::SettingsSnapshot, now)
                 .map_err(|_| Error::Unavailable)?;
             let view: cglb::Status =
                 serde_json::from_slice(verified.payload()).map_err(|_| Error::Unavailable)?;

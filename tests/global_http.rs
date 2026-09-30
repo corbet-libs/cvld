@@ -1,6 +1,5 @@
 #![cfg(feature = "development-gate")]
 mod support;
-use cglb::{cpsd, csgn};
 use cvld::api::*;
 use serde_json::json;
 use support::*;
@@ -15,7 +14,7 @@ async fn wallet_passkey_blind_passport_and_host_role_boundaries() {
         serde_json::from_value(client.call("global_public", json!({})).await.unwrap()).unwrap();
     let ring = csgn::KeyRing::from_cbor(&public.key_ring).unwrap();
     let signed = ring
-        .verify(&public.status, csgn::Kind::RevocationListSnapshot, NOW)
+        .verify(&public.status, csgn::Kind::SettingsSnapshot, NOW)
         .unwrap();
     let status: cglb::Status = serde_json::from_slice(signed.payload()).unwrap();
     assert_eq!(status.epoch, 1);
@@ -108,7 +107,7 @@ async fn wallet_passkey_blind_passport_and_host_role_boundaries() {
         root_client
             .call(
                 "global_suspend",
-                json!({"user":member.user,"until":NOW+600})
+                json!({"user":member.user,"until":(NOW / 86400 + 1) * 86400})
             )
             .await
             .is_err()
@@ -120,14 +119,14 @@ async fn wallet_passkey_blind_passport_and_host_role_boundaries() {
     root_client
         .call(
             "global_suspend",
-            json!({"user":member.user,"until":NOW+600}),
+            json!({"user":member.user,"until":(NOW / 86400 + 1) * 86400}),
         )
         .await
         .unwrap();
     let changed: GlobalPublic =
         serde_json::from_value(client.call("global_public", json!({})).await.unwrap()).unwrap();
     let signed = ring
-        .verify(&changed.status, csgn::Kind::RevocationListSnapshot, NOW)
+        .verify(&changed.status, csgn::Kind::SettingsSnapshot, NOW)
         .unwrap();
     let changed: cglb::Status = serde_json::from_slice(signed.payload()).unwrap();
     assert_eq!(changed.epoch, 2);
@@ -216,7 +215,10 @@ async fn valid_signature_without_uv_cannot_create_a_session() {
     let client = client(&service, WALLET, None);
     let begin: Ceremony = serde_json::from_value(
         client
-            .call("login_begin", json!({"user": member.user}))
+            .call(
+                "login_begin",
+                json!({"user": member.user,"credential":member.credential}),
+            )
             .await
             .unwrap(),
     )
@@ -249,18 +251,14 @@ async fn maintenance_refreshes_public_expiry_without_a_member_query() {
     let client = client(&service, WALLET, None);
     let before: GlobalPublic =
         serde_json::from_value(client.call("global_public", json!({})).await.unwrap()).unwrap();
-    service.clock.set(NOW + 2000);
+    service.clock.set(NOW + 86400);
     service.door.maintain().await.unwrap();
     let after: GlobalPublic =
         serde_json::from_value(client.call("global_public", json!({})).await.unwrap()).unwrap();
     assert_ne!(before.status, after.status);
     let ring = csgn::KeyRing::from_cbor(&after.key_ring).unwrap();
     let verified = ring
-        .verify(
-            &after.status,
-            csgn::Kind::RevocationListSnapshot,
-            NOW + 2000,
-        )
+        .verify(&after.status, csgn::Kind::SettingsSnapshot, NOW + 86400)
         .unwrap();
     let status: cglb::Status = serde_json::from_slice(verified.payload()).unwrap();
     assert_eq!(status.epoch, 1);

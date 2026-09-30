@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-use cglb::{cpsd, csgn};
 use cvld::{
     api::*,
     cli::Client,
@@ -111,7 +110,7 @@ pub async fn global(burst: u32) -> Running {
         pending_capacity: 100,
         throttle_burst: burst,
         throttle_interval_ms: 60_000,
-        publication_seconds: 3600,
+        publication_seconds: 172800,
         signer_max_seconds: 86_400 * 100,
         development: true,
     };
@@ -137,6 +136,7 @@ pub fn client(service: &Running, host: &str, token: Option<&str>) -> Client {
 pub struct Member {
     pub authenticator: SoftToken,
     pub user: String,
+    pub credential: Vec<u8>,
     pub session: String,
 }
 pub async fn enrol(service: &Running, host: &str, bootstrap: Option<&str>) -> Member {
@@ -145,7 +145,7 @@ pub async fn enrol(service: &Running, host: &str, bootstrap: Option<&str>) -> Me
         client
             .call(
                 "register_begin",
-                json!({"bootstrap":bootstrap,"ticket":null}),
+                json!({"bootstrap":bootstrap,"passport":null}),
             )
             .await
             .unwrap(),
@@ -160,6 +160,7 @@ pub async fn enrol(service: &Running, host: &str, bootstrap: Option<&str>) -> Me
             300_000,
         )
         .unwrap();
+    let credential_id = credential.raw_id.as_ref().to_vec();
     let user: User = serde_json::from_value(
         client
             .call(
@@ -170,10 +171,18 @@ pub async fn enrol(service: &Running, host: &str, bootstrap: Option<&str>) -> Me
             .unwrap(),
     )
     .unwrap();
-    let session = login(service, host, &mut authenticator, &user.user).await;
+    let session = login(
+        service,
+        host,
+        &mut authenticator,
+        &user.user,
+        &credential_id,
+    )
+    .await;
     Member {
         authenticator,
         user: user.user,
+        credential: credential_id,
         session,
     }
 }
@@ -182,11 +191,12 @@ pub async fn login(
     host: &str,
     authenticator: &mut SoftToken,
     user: &str,
+    credential: &[u8],
 ) -> String {
     let client = client(service, host, None);
     let start: Ceremony = serde_json::from_value(
         client
-            .call("login_begin", json!({"user":user}))
+            .call("login_begin", json!({"user":user,"credential":credential}))
             .await
             .unwrap(),
     )

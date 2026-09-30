@@ -7,7 +7,6 @@ use crate::{
     global::GlobalService,
 };
 use axum::http::HeaderMap;
-use cglb::{cpsd, crlt};
 use std::{
     collections::BTreeMap,
     num::NonZeroUsize,
@@ -53,6 +52,10 @@ pub(crate) struct Context {
     pub now: u64,
 }
 impl Context {
+    pub fn global_session(&self) -> Result<cglb::Session> {
+        let grant = self.grant.as_ref().ok_or(Error::Unauthorized)?;
+        cglb::Session::authenticated(self.subject()?, grant.session_id).map_err(|_| Error::Invalid)
+    }
     pub fn subject(&self) -> Result<cglb::Subject> {
         cglb::Subject::new(
             self.grant
@@ -71,7 +74,8 @@ impl Door {
                 .domain
                 .bytes()
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'.' || c == b'-')
-            || config.publication_seconds == 0
+            || config.publication_seconds < 172_800
+            || config.publication_seconds % 86_400 != 0
         {
             return Err(Error::Invalid);
         }
@@ -178,11 +182,7 @@ impl Door {
             .facade
             .key_ring()
             .map_err(|_| Error::Unavailable)?
-            .verify(
-                &global.public.status,
-                cglb::csgn::Kind::RevocationListSnapshot,
-                now,
-            )
+            .verify(&global.public.status, csgn::Kind::SettingsSnapshot, now)
             .map(|s| s.valid_until() > now + global.publication_seconds / 2)
             .unwrap_or(false);
         if !fresh {
@@ -303,7 +303,7 @@ impl Door {
             .register_finish(request, ctx.now)
             .await
     }
-    pub(crate) async fn login_begin(&self, ctx: Context, request: User) -> Result<Ceremony> {
+    pub(crate) async fn login_begin(&self, ctx: Context, request: LoginStart) -> Result<Ceremony> {
         self.auth(&ctx.host)?
             .lock()
             .await
@@ -338,7 +338,7 @@ impl Door {
             .facade
             .challenge(
                 &mut cpsd::rand::rngs::OsRng,
-                &ctx.subject()?,
+                &ctx.global_session()?,
                 ctx.now,
                 ctx.now + 60,
             )
@@ -363,7 +363,7 @@ impl Door {
             .facade
             .issue(
                 &mut cpsd::rand::rngs::OsRng,
-                &ctx.subject()?,
+                &ctx.global_session()?,
                 &challenge,
                 &request,
                 ctx.now,
@@ -378,6 +378,7 @@ impl Door {
     pub(crate) async fn development_gate(&self, ctx: Context, _: Empty) -> Result<Empty> {
         let global = self.inner.global.lock().await;
         let subject = ctx.subject()?;
+        let check = cglb::CheckId::generate(&mut cpsd::rand::rngs::OsRng);
         global
             .facade
             .run_gate(
@@ -385,6 +386,7 @@ impl Door {
                 &subject,
                 subject.as_str().as_bytes(),
                 ctx.now,
+                &check,
             )
             .await
             .map_err(|_| Error::Refused)?;

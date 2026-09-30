@@ -37,7 +37,9 @@ Existing operator credentials prevent reuse of bootstrap across restart.
 The global service calls cglb for uniqueness, gates, blind issuance, warning and
 temporary suspension. It never receives a community identifier or pseudonym.
 Public material contains only issuer keys, policy revision, epoch and common
-expiry. Private global revocations are not sent to communities. Cglb's current
+expiry. The purpose-bound global status uses csgn SettingsSnapshot, with UTC-day
+publication boundaries. A challenge binds to one UV-verified session; replay
+and another session cannot use it. Cpsd owns durable issuance nonce storage. Private global revocations are not sent to communities. Cglb's current
 revocation mechanism advances the passport cohort epoch; it is not an individual
 zero-knowledge revocation accumulator. Global providers beyond the development
 gate remain leaf integrations.

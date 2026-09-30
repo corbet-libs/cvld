@@ -55,8 +55,8 @@ pub struct Empty {}
 pub struct RegisterStart {
     /// Required for an operator; never a role supplied by the caller.
     pub bootstrap: Option<String>,
-    /// Community-only, verified passport enrolment ticket.
-    pub ticket: Option<String>,
+    /// Community-only, one-use passport presentation.
+    pub passport: Option<PresentationInput>,
 }
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
@@ -76,6 +76,18 @@ pub struct RegisterFinish {
 #[serde(deny_unknown_fields)]
 pub struct User {
     pub user: String,
+}
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PresentationInput {
+    pub challenge: Vec<u8>,
+    pub proof: Vec<u8>,
+}
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(deny_unknown_fields)]
+pub struct LoginStart {
+    pub user: String,
+    pub credential: Vec<u8>,
 }
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
@@ -214,7 +226,7 @@ macro_rules! actions {
 actions! {
     register_begin(RegisterStart) -> Ceremony, Public, Both, Record, "Begin UV-required passkey registration";
     register_finish(RegisterFinish) -> User, Public, Both, Record, "Verify and store the first passkey";
-    login_begin(User) -> Ceremony, Public, Both, Check, "Begin account-first passkey authentication";
+    login_begin(LoginStart) -> Ceremony, Public, Both, Check, "Begin credential-first passkey authentication";
     login_finish(LoginFinish) -> Session, Public, Both, Record, "Verify user and counter; create an ephemeral session";
     logout(Empty) -> Empty, Authenticated, Both, Check, "End this ephemeral session";
     global_public(Empty) -> GlobalPublic, Public, Global, Check, "Read authenticated global issuer material";
