@@ -47,17 +47,19 @@ impl GlobalService {
         .map_err(|_| Error::Unavailable)?;
         let issuer = cpsd::IssuerKey::from_secret_bytes(&Config::secret(&config.issuer_key_file)?)
             .map_err(|_| Error::Invalid)?;
-        let mut mode = cglb::Mode::Production;
-        if config.development {
-            #[cfg(feature = "development-gate")]
-            {
-                mode = cglb::Mode::Development;
-            }
-            #[cfg(not(feature = "development-gate"))]
-            {
+        #[cfg(feature = "development-gate")]
+        let mode = if config.development {
+            cglb::Mode::Development
+        } else {
+            cglb::Mode::Production
+        };
+        #[cfg(not(feature = "development-gate"))]
+        let mode = {
+            if config.development {
                 return Err(Error::Forbidden);
             }
-        }
+            cglb::Mode::Production
+        };
         let mut facade = Global::open(
             cglb::storage::LibsqlStore::new(db, "global").map_err(|_| Error::Invalid)?,
             issuer,

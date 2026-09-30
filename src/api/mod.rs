@@ -1,8 +1,5 @@
 //! The single action definition drives every transport and generated schema.
-use crate::{
-    error::{Error, Result},
-    service::Door,
-};
+use crate::{error::Error, service::Door};
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, State},
@@ -201,18 +198,47 @@ pub fn action(name: &str) -> Option<&'static Action> {
     ACTIONS.iter().find(|a| a.name == name)
 }
 pub fn openapi() -> utoipa::openapi::OpenApi {
-    let paths: serde_json::Map<String, Value> = ACTIONS.iter().map(|action| {
-        let role = format!("{:?}", action.access).to_lowercase();
-        (format!("/v1/{}", action.name), json!({"post": {
+    let mut components = serde_json::Map::new();
+    fn component_refs(value: &mut Value) {
+        match value {
+            Value::Object(map) => {
+                if let Some(Value::String(reference)) = map.get_mut("$ref") {
+                    *reference = reference.replace("#/$defs/", "#/components/schemas/");
+                }
+                for value in map.values_mut() {
+                    component_refs(value);
+                }
+            }
+            Value::Array(values) => {
+                for value in values {
+                    component_refs(value);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut paths = serde_json::Map::new();
+    for action in ACTIONS {
+        let mut input = (action.request)();
+        let mut output = (action.response)();
+        for schema in [&mut input, &mut output] {
+            if let Some(Value::Object(defs)) = schema.as_object_mut().unwrap().remove("$defs") {
+                components.extend(defs);
+            }
+        }
+        paths.insert(format!("/v1/{}", action.name), json!({"post": {
             "operationId": action.name, "summary": action.description,
-            "x-role": role, "x-effect": format!("{:?}", action.effect).to_lowercase(),
-            "requestBody": {"required": true, "content": {"application/json": {"schema": (action.request)()}}},
-            "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": (action.response)()}}},
+            "x-role": format!("{:?}", action.access).to_lowercase(),
+            "x-effect": format!("{:?}", action.effect).to_lowercase(),
+            "requestBody": {"required": true, "content": {"application/json": {"schema": input}}},
+            "responses": {"200": {"description": "Success", "content": {"application/json": {"schema": output}}},
                 "default": {"description": "Fixed redacted error category"}},
             "security": if action.access == Access::Public { json!([]) } else { json!([{"session": []}]) }
-        }}))
-    }).collect();
-    serde_json::from_value(json!({"openapi":"3.1.0", "info":{"title":"cvld", "version":"0.2.0"},
-        "paths": paths, "components":{"securitySchemes":{"session":{"type":"http", "scheme":"bearer"}}}}))
-        .expect("registry builds valid OpenAPI")
+        }}));
+    }
+    let mut document = json!({"openapi":"3.1.0", "info":{"title":"cvld", "version":"0.2.0"},
+        "paths": paths, "components":{"schemas": components,
+            "securitySchemes":{"session":{"type":"http", "scheme":"bearer"}}}});
+    component_refs(&mut document);
+    serde_json::from_value(document).expect("registry builds valid OpenAPI")
 }

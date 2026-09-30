@@ -121,6 +121,9 @@ impl Auth {
             .map_err(|_| Error::Invalid)?;
         let passkeys = self.passkeys.clone();
         tokio::task::spawn_blocking(move || {
+            if !passkeys.list(pending.user)?.is_empty() {
+                return Err(cpky::Error::DuplicateCredential);
+            }
             passkeys.finish_registration(pending.state, &request.credential, month)
         })
         .await
@@ -172,7 +175,7 @@ impl Auth {
             .logins
             .remove(&request.ceremony)
             .ok_or(Error::Unauthorized)?;
-        let credential = request.credential.raw_id.clone();
+        let credential: cpky::CredentialID = request.credential.raw_id.clone().into();
         let passkeys = self.passkeys.clone();
         let authentication = tokio::task::spawn_blocking(move || {
             passkeys.finish_authentication(pending.state, &request.credential)
