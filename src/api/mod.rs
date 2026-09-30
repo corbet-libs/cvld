@@ -8,6 +8,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use utoipa::ToSchema;
+mod community;
+pub use community::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -80,7 +82,7 @@ pub struct User {
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct PresentationInput {
-    pub challenge: Vec<u8>,
+    pub challenge: String,
     pub proof: Vec<u8>,
 }
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -232,6 +234,23 @@ actions! {
     global_public(Empty) -> GlobalPublic, Public, Global, Check, "Read authenticated global issuer material";
     passport_challenge(Empty) -> Bytes, Member, Global, Record, "Reserve a blind passport issuance challenge";
     passport_issue(PassportIssue) -> Bytes, Member, Global, Record, "Issue a blind passport after global policy checks";
+    presentation_challenge(Empty) -> PresentationChallenge, Public, Community, Record, "Begin a signed community passport presentation";
+    lobby(Empty) -> Lobby, Member, Community, Check, "Read enrolment and missing requirements";
+    handle_available(Handle) -> Available, Public, Community, Check, "Check a community handle";
+    handle_reserve(Handle) -> Lobby, Member, Community, Record, "Reserve a community handle";
+    gate_voucher(Voucher) -> Lobby, Member, Community, Record, "Verify a member-bound voucher";
+    gate_withdraw(Withdraw) -> Lobby, Member, Community, Record, "Withdraw a retained community gate";
+    credential_issue(CredentialRequest) -> CredentialResponse, Member, Community, Record, "Present a passport and request admission or renewal";
+    pin_set(PinRequest) -> PinResponse, Member, Community, Record, "Seal an initial profile fingerprint";
+    pin_get(Field) -> PinResponse, Member, Community, Check, "Read a sealed fingerprint";
+    pin_change(PinChange) -> PinResponse, Member, Community, Record, "Change a fingerprint using spent-token evidence";
+    passkey_revoke(RevokePasskey) -> Empty, Member, Community, Record, "Revoke a community passkey";
+    setting_set(Setting) -> TrustFeed, Admin, Community, Record, "Edit a community setting";
+    platform_set(PlatformSetting) -> TrustFeed, Root, Community, Record, "Edit a platform setting or force switch";
+    schema_check(SchemaRequest) -> SchemaChanges, Admin, Community, Check, "Classify profile schema changes";
+    schema_set(SchemaRequest) -> TrustFeed, Admin, Community, Record, "Publish a profile schema";
+    trust_feed(Empty) -> TrustFeed, Public, Community, Check, "Read signed public trust snapshots";
+    trust_changes(Since) -> Announcement, Public, Community, Check, "Wait for a public revision announcement";
     global_warn(User) -> Empty, Root, Global, Record, "Record the warning preceding temporary suspension";
     global_suspend(Suspend) -> Empty, Root, Global, Record, "Temporarily suspend and advance the global epoch";
     #[cfg(feature = "development-gate")]

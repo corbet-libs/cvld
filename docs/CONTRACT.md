@@ -73,3 +73,114 @@ surface parity, default release tests and a negative release-feature build.
 OpenAPI and the TypeScript client are regenerated and compared with committed
 output. No Cargo command runs on the workstation. The optional Turso test connects
 only if both TURSO_URL and TURSO_TOKEN are nonempty; use a disposable database.
+
+## Community process
+
+`cvld serve community --config <file>` owns one database for one canonical
+community and its own durable csgn signer. The immutable database identity
+prevents assigning the same file to another community. There is no global
+service handle, global member identifier, issuer secret or uniqueness key in
+this backend. Global status and issuer keys arrive only as authenticated public
+configuration. The global API refuses community actions before reading a body;
+community listeners likewise refuse global actions.
+
+Member authentication delegates to cmbr/cpky. The RP is the canonical
+`<community>.<domain>` and allowed origins are that site and its member API.
+Admin and root have separate RPs, stored credential namespaces and ephemeral
+sessions. Public API host headers are exact; forwarded headers are ignored.
+A session cannot cross hosts, communities or processes. The service validates
+its exact live credential on each authenticated call. No caller chooses a role.
+
+A community presentation challenge is single-use, server-held and short-lived.
+The response carries cplc's signed cpsd request. A holder must authenticate the
+intended community's origin/key ring before producing a presentation. First
+registration consumes the presentation and binds a random community-local UUID
+to its verified pseudonym through cmnt. Registration never grants admission.
+A fresh presentation is needed for credential issuance; proof bytes and global
+gate disclosures are not persisted. Different communities receive different
+pseudonyms, relying on cpsd's BBS/SyRA construction.
+
+The lobby reports cmbr's enrolment state, cplc's current missing requirements,
+cgts's gate steps, the canonical handle and mandatory no-return warnings. It
+creates no visit record and does not lapse a member merely because a fresh
+passport was not supplied to this read. Voucher verification and atomic
+single-use storage belong to cgts/cvch. Handles use cmbr's cgrd/crgs operations.
+Pins contain only a context-bound v2 digest; schema values and salts stay on
+devices. A changed digest needs the owning facade's spent-token capability.
+
+cmnt owns admission, gate decisions and credential issuance through the three
+facades. cplc reads authoritative membership facts from cmbr and holds its member
+guard until signing completes. Probation and coarse leases come from membership;
+request bodies cannot select established standing or a credential expiry.
+Credentials contain the community pseudonym, handle, public device keys,
+community gate metadata, pins, schema version and community policy epoch.
+Global gate disclosures are excluded. The signer returns Ed25519 COSE bytes,
+which verify using the published community key ring.
+
+The door serializes composed writes and maintenance in its process. Deploy one
+writer process per database. Every request uses one trusted operation timestamp;
+this timestamp is transient and never a member activity record. A failed or
+ambiguous operation returns a redacted error, never an earlier credential.
+Retrying issuance needs a fresh presentation. Maintenance delegates pending
+expiry, handle retention/release and challenge pruning to the facades.
+
+## Administration and public trust feed
+
+Community administrators may edit sparse community settings and validate or
+publish schema changes. Root alone may edit platform values and force switches.
+Both call these APIs directly. Setting resolution, null versus inheritance,
+bounds, notice and prospective epochs remain crbk/cplc rules. Schema validation
+and change classification remain cshm rules; no profile values are collected.
+
+`trust_feed` serves four signed snapshots (settings, current schema, public
+community directory, revocations), the public key ring and a signed manifest.
+The manifest's fixed `cplc.trust.v1` purpose separates it from flat settings;
+it binds community, durable revision, effective epoch, key ring and schema
+version. Each snapshot has its own revision and the same effective policy epoch.
+Consumers authenticate the origin/ring, verify the protected COSE kind and scope,
+and retain monotonic revision and epoch floors.
+
+`trust_changes` accepts a public revision and returns an announcement immediately
+when newer material exists, or after a bounded 25-second wait. cfrm pulls this
+public material at startup and on announcements. No trust-feed request includes
+a member ID; cfrm verifies credentials locally without runtime member queries.
+An expired snapshot is never made fresh by a failed maintenance attempt.
+
+## Action registry
+
+Every name below is an HTTP POST, CLI subcommand and MCP tool with its request
+and response described by the generated OpenAPI. `Public` requires a valid
+service host; `Authenticated` means the session's exact host-selected role.
+
+| Action | Role | Service | Effect |
+|---|---|---|---|
+| register_begin | Public | Both | Record |
+| register_finish | Public | Both | Record |
+| login_begin | Public | Both | Check |
+| login_finish | Public | Both | Record |
+| logout | Authenticated | Both | Check |
+| global_public | Public | Global | Check |
+| passport_challenge | Member | Global | Record |
+| passport_issue | Member | Global | Record |
+| global_warn | Root | Global | Record |
+| global_suspend | Root | Global | Record |
+| presentation_challenge | Public | Community | Record |
+| lobby | Member | Community | Check |
+| handle_available | Public | Community | Check |
+| handle_reserve | Member | Community | Record |
+| gate_voucher | Member | Community | Record |
+| gate_withdraw | Member | Community | Record |
+| credential_issue | Member | Community | Record |
+| pin_set | Member | Community | Record |
+| pin_get | Member | Community | Check |
+| pin_change | Member | Community | Record |
+| passkey_revoke | Member | Community | Record |
+| setting_set | Admin | Community | Record |
+| platform_set | Root | Community | Record |
+| schema_check | Admin | Community | Check |
+| schema_set | Admin | Community | Record |
+| trust_feed | Public | Community | Check |
+| trust_changes | Public | Community | Check |
+
+The opt-in development build adds `development_gate` (Member, Global, Record).
+No production route, CLI command, MCP tool or OpenAPI path contains it.

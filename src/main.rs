@@ -1,6 +1,6 @@
 use cvld::{
     api, cli,
-    config::Config,
+    config::{CommunityConfig, Config},
     error::{Error, Result},
     service::{Door, SystemClock},
 };
@@ -34,11 +34,23 @@ async fn run() -> Result<()> {
         "openapi" => println!("{}", api::openapi_json()),
         "serve" => {
             let (scope, args) = args.subcommand().ok_or(Error::Invalid)?;
-            let config = Config::read(args.get_one::<String>("config").ok_or(Error::Invalid)?)?;
-            let listen = config.listen.clone();
-            let door = match scope {
-                "global" => Door::global(config, Arc::new(SystemClock)).await?,
-                _ => return Err(Error::Unavailable),
+            let path = args.get_one::<String>("config").ok_or(Error::Invalid)?;
+            let (listen, door) = match scope {
+                "global" => {
+                    let config = Config::read(path)?;
+                    (
+                        config.listen.clone(),
+                        Door::global(config, Arc::new(SystemClock)).await?,
+                    )
+                }
+                "community" => {
+                    let config = CommunityConfig::read(path)?;
+                    (
+                        config.listen.clone(),
+                        Door::community(config, Arc::new(SystemClock)).await?,
+                    )
+                }
+                _ => return Err(Error::Invalid),
             };
             let maintenance = door.clone();
             let task = tokio::spawn(async move {

@@ -22,6 +22,8 @@ Surveyed crates.io, official documentation and GitHub on 2026-09-30:
 | [clap](https://github.com/clap-rs/clap) 4.6 | Build subcommands directly from action metadata. |
 | [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) 7.13 | Generate the TypeScript interface from the emitted OpenAPI. |
 | [cglb](https://github.com/corbet-libs/cglb) | Own global uniqueness, gate execution, suspension and blind issuance. |
+| [cmnt](https://github.com/corbet-libs/cmnt) | Compose membership, gates and policy without copying their domain logic. |
+| [ed25519-dalek](https://github.com/dalek-cryptography/curve25519-dalek) 2.2 | Parse the configured public sponsor key for cgts; signing and verification stay in the facades and leaves. |
 | [cpky](https://github.com/corbet-foss/cpky) | UV-required wallet/operator WebAuthn; no new passkey implementation. |
 | [subtle](https://docs.rs/subtle/latest/subtle/trait.ConstantTimeEq.html) 2.6 | Compare bootstrap capability contents without ordinary string-comparison timing; already shared by cryptographic dependencies. |
 | [cthl](https://github.com/corbet-foss/cthl) | Maintained governor-backed throttling with bounded memory. |
@@ -73,3 +75,48 @@ UUID and credential ID, keeping server-side credential lists private.
 it in a release build is a compilation error, including releases with debug
 assertions enabled. Production builds and their
 generated clients omit the synthetic gate.
+
+## Community process and trust consumers
+
+```sh
+cvld serve community --config ./community.json
+cvld --url https://api.example.cmeet.me --host api.example.cmeet.me \
+  --session-file ./member.session lobby
+cvld --url https://api.admin.example.cmeet.me --host api.admin.example.cmeet.me \
+  --session-file ./admin.session setting_set \
+  --request '{"key":"quota","value":5,"inherit":false,"effective_at":1800000001}'
+```
+
+Each community process opens its own database and signer. Supply its canonical
+slug, domain, rulebook, schema, voucher verification key, operator bootstrap
+capabilities and the global service's authenticated **public** material. It never
+opens a global database, issuer secret or uniqueness key. The global process
+never opens a community database or accepts community domain actions.
+
+Member calls use `api.<community>.<domain>`, administrators use
+`api.admin.<community>.<domain>`, and root uses `api.root.<domain>`. Each listener
+serves one configured backend. Sessions belong to that process and exact host;
+operators authenticate directly, without cfrm. A TLS ingress must direct each
+operator request to its selected backend and preserve the exact Host header.
+This repository performs no ingress configuration or deployment.
+
+A holder fetches a signed presentation challenge from the intended community,
+authenticates its origin and key ring, and uses cpsd to present the blind passport.
+The first presentation starts a community-local WebAuthn registration. The
+pseudonym becomes the member ID; the global wallet identity never enters that
+community. A fresh presentation is required at credential issuance. The lobby
+reports current enrolment, missing requirements, gate steps and no-return
+warnings. It does not persist a visit or change membership merely because it
+was read.
+
+Sponsors create member-bound cvch vouchers off band. The voucher endpoint
+passes their wire format to cgts. Pin values and salts remain on the device;
+only the versioned, context-bound cpns digest enters cmbr. Policy, enrolment,
+leases, lapse and credential lifetimes remain owned by the facades.
+
+`trust_feed` returns the signed settings, schema, public community directory,
+revocations and a purpose-separated signed manifest containing the key ring,
+schema version, policy epoch and durable revision. `trust_changes` performs a
+bounded long poll against that public revision. cfrm pulls at startup and after
+an announcement, verifies COSE and enforces revision/epoch floors locally.
+Neither call accepts a member identifier. No member lookup is required at runtime.
