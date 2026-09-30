@@ -352,3 +352,39 @@ async fn unauthenticated_and_foreign_hosts_are_refused_before_body_arrives() {
         assert_eq!(&response[..], format!("HTTP/1.1 {expected}").as_bytes());
     }
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn sensitive_responses_errors_and_fallbacks_prohibit_storage() {
+    let service = global(100).await;
+    let http = reqwest::Client::new();
+    for (action, body, expected) in [
+        ("register_begin", "{}", 200),
+        ("passport_issue", "{}", 401),
+        ("login_begin", "{", 400),
+        ("unknown", "{}", 404),
+    ] {
+        let response = http
+            .post(format!("{}/v1/{action}", service.base))
+            .header("host", WALLET)
+            .header("content-type", "application/json")
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), expected);
+        assert_eq!(response.headers().get("cache-control").unwrap(), "no-store");
+    }
+    let response = http
+        .post(format!("{}/v1/register_begin", service.base))
+        .header("host", WALLET)
+        .header("content-type", "application/json")
+        .body("x".repeat(256 * 1024 + 1))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 400);
+    assert_eq!(
+        response.json::<serde_json::Value>().await.unwrap(),
+        json!({"error":"invalid"})
+    );
+}

@@ -117,7 +117,7 @@ pub struct PassportIssue {
     pub challenge: Vec<u8>,
     pub request: Vec<u8>,
 }
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct GlobalPublic {
     pub key_ring: Vec<u8>,
@@ -211,16 +211,22 @@ macro_rules! actions {
                 router = router.route(concat!("/v1/", stringify!($name)), post(
                     |State(door): State<Door>, request: Request| async move {
                         let action = action(stringify!($name)).expect("registered action");
-                        let _guard = door.request_guard(action).await;
+                        let _permit = door.admit_request(action).await?;
                         let ctx = door.authorize(action, request.headers()).await?;
                         let Json(request) = tokio::time::timeout(std::time::Duration::from_secs(10), Json::<$request>::from_request(request, &())).await.map_err(|_| Error::Invalid)?.map_err(|_| Error::Invalid)?;
-                        let ctx = door.complete_context(ctx)?;
+                        let _guard = door.request_guard(action).await;
+                        let ctx = door.complete_context(action, ctx).await?;
                         let response: $response = crate::service::at(ctx.now, door.$name(ctx, request)).await?;
                         Ok::<_, Error>(Json(response))
                     }
                 ));
             } )*
-            router.layer(DefaultBodyLimit::max(256 * 1024)).layer(door.cors()).with_state(door)
+            router.layer(DefaultBodyLimit::max(256 * 1024)).layer(door.cors())
+                .layer(axum::middleware::map_response(|mut response: axum::response::Response| async move {
+                    response.headers_mut().insert(axum::http::header::CACHE_CONTROL,
+                        axum::http::HeaderValue::from_static("no-store"));
+                    response
+                })).with_state(door)
         }
     }
 }

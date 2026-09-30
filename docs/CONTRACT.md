@@ -213,3 +213,23 @@ epoch immediately; archived definitions do not authorize grandfathering.
 The optional remote Turso test needs an explicitly supplied disposable database.
 Public CI uses local libSQL and synthetic credentials only. TLS ingress, operational
 public-key distribution and deployment are outside this repository's test run.
+
+## Request admission and public read isolation
+
+Aggregate action quotas and nonwaiting in-flight permits precede body allocation
+or execution queues. The process admits at most 32 ordinary public requests,
+32 protected requests and 16 long polls at a time. Overflow returns the fixed
+throttled category. Body receipt has a ten-second deadline and a 256-KiB limit;
+it holds no execution lock. After receipt, mutation serialization and a fresh
+exact-credential check prevent a body or queue wait from extending an expired,
+logged-out or revoked session. Maintenance uses the same mutation boundary.
+
+Public global material and community trust feeds use immutable watch snapshots,
+independent of private operation locks and member credentials. Only a completed
+publication replaces the public snapshot. Ordinary enrolment, login and renewal
+do not change its bytes. Public epoch updates still announce policy/revocation
+changes; shared-machine CPU and network timing are not an anonymity guarantee.
+All HTTP successes, failures and fallbacks carry `Cache-Control: no-store`.
+
+Initial seals are refused for Free fields. cmnt omits a formerly restricted
+field's stored seal while that field is Free, permitting renewal after loosening.

@@ -94,7 +94,7 @@ impl Door {
             .public
             .iter()
             .chain(&schema.private)
-            .any(|f| f.id == request.field)
+            .any(|f| f.id == request.field && f.change_preset != cplc::cshm::ChangePreset::Free)
         {
             return Err(Error::Invalid);
         }
@@ -234,15 +234,16 @@ impl Door {
         Ok(community.public.clone())
     }
     pub(crate) async fn trust_feed(&self, _: Context, _: Empty) -> Result<TrustFeed> {
-        Ok(self.community_backend()?.lock().await.public.clone())
+        Ok(self.community_public()?.borrow().as_ref().clone())
     }
     pub(crate) async fn trust_changes(&self, _: Context, request: Since) -> Result<Announcement> {
-        let mut changes = self.community_backend()?.lock().await.changes.subscribe();
-        if changes.borrow_and_update().0 <= request.revision {
+        let mut changes = self.community_public()?;
+        if changes.borrow_and_update().revision <= request.revision {
             let _ =
                 tokio::time::timeout(std::time::Duration::from_secs(25), changes.changed()).await;
         }
-        let (revision, policy_epoch) = *changes.borrow();
+        let public = changes.borrow();
+        let (revision, policy_epoch) = (public.revision, public.policy_epoch);
         Ok(Announcement {
             revision,
             policy_epoch,

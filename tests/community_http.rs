@@ -489,3 +489,99 @@ async fn signed_global_epoch_refresh_refuses_old_proofs_and_durable_rollback() {
             .is_err()
     );
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn free_fields_refuse_pins_without_changing_public_member_metadata() {
+    let global = global(100).await;
+    let (_, passport, public) = wallet_passport(&global).await;
+    let community = community("seals", &public).await;
+    let host = "api.seals.example.test";
+    let admin = enrol(
+        &community,
+        "api.admin.seals.example.test",
+        Some("synthetic-admin-enrolment-capability"),
+    )
+    .await;
+    let mut schema = community_schema("seals", 2);
+    schema.public[0].change_preset = cplc::cshm::ChangePreset::Free;
+    client(
+        &community,
+        "api.admin.seals.example.test",
+        Some(&admin.session),
+    )
+    .call("schema_set", json!({"schema": schema}))
+    .await
+    .unwrap();
+    let before = client(&community, host, None)
+        .call("trust_feed", json!({}))
+        .await
+        .unwrap();
+    let member = enrol_community(&community, host, &passport).await;
+    let pseudonym = passport
+        .pseudonym(&cpsd::CommunityId::new("seals").unwrap())
+        .to_hex();
+    let pin = cmnt::cmbr::PinV2::seal(
+        &cpns::FingerprintContext {
+            community: "seals",
+            member: &pseudonym,
+            field: "restricted",
+        },
+        b"true",
+        &cpns::Salt::from_bytes(vec![17; 32]).unwrap(),
+    );
+    assert_eq!(
+        call_status(
+            &community,
+            host,
+            Some(&member.session),
+            "pin_set",
+            json!({"field": "restricted", "pin": pin})
+        )
+        .await,
+        400
+    );
+    let c = client(&community, host, Some(&member.session));
+    assert!(
+        c.call("pin_get", json!({"field": "restricted"}))
+            .await
+            .unwrap()["pin"]
+            .is_null()
+    );
+    c.call("handle_reserve", json!({"handle":"member_seals"}))
+        .await
+        .unwrap();
+    c.call(
+        "gate_voucher",
+        voucher("seals", &pseudonym, "seal-voucher", NOW + 172800),
+    )
+    .await
+    .unwrap();
+    assert!(
+        issue_community(&community, host, &member, &passport)
+            .await
+            .credential
+            .is_some()
+    );
+    let after = c.call("trust_feed", json!({})).await.unwrap();
+    assert_eq!(before, after);
+    for field in [
+        "settings",
+        "schema",
+        "schema_versions",
+        "communities",
+        "revocations",
+        "manifest",
+    ] {
+        let bytes: Vec<u8> = serde_json::from_value(after[field].clone()).unwrap();
+        assert!(
+            !bytes
+                .windows(pseudonym.len())
+                .any(|w| w == pseudonym.as_bytes())
+        );
+        assert!(
+            !bytes
+                .windows(member.user.len())
+                .any(|w| w == member.user.as_bytes())
+        );
+    }
+}

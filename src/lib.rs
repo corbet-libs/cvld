@@ -15,3 +15,6 @@ mod global_trust;
 mod identity;
 pub mod mcp;
 pub mod service;
+
+#[cfg(test)]
+extern crate self as cvld;

@@ -64,7 +64,7 @@ pub struct CommunityService {
     issuer_public_key: Vec<u8>,
     pub config: CommunityConfig,
     pub public: TrustFeed,
-    pub changes: tokio::sync::watch::Sender<(u64, u64)>,
+    pub changes: tokio::sync::watch::Sender<Arc<TrustFeed>>,
     voucher: cgts::gates::VoucherGate,
     challenges: HashMap<String, Challenge>,
     registrations: HashMap<String, Pending<cmbr::PendingRegistration>>,
@@ -263,7 +263,7 @@ impl CommunityService {
         )
         .map_err(|_| Error::Invalid)?;
         let public = publish(&facade, now).await?;
-        let (changes, _) = tokio::sync::watch::channel((public.revision, public.policy_epoch));
+        let (changes, _) = tokio::sync::watch::channel(Arc::new(public.clone()));
         Ok(Self {
             facade,
             db: db.clone(),
@@ -690,8 +690,7 @@ impl CommunityService {
     }
     pub async fn refresh(&mut self, now: u64) -> Result<()> {
         self.public = publish(&self.facade, now).await?;
-        self.changes
-            .send_replace((self.public.revision, self.public.policy_epoch));
+        self.changes.send_replace(Arc::new(self.public.clone()));
         Ok(())
     }
     pub async fn maintain(&mut self, now: u64) -> Result<()> {

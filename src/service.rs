@@ -14,7 +14,7 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, OwnedSemaphorePermit, Semaphore, watch};
 
 pub trait Clock: Send + Sync {
     fn now(&self) -> u64;
@@ -45,12 +45,20 @@ pub struct Door {
 }
 struct Inner {
     requests: Arc<Mutex<()>>,
+    public_slots: Arc<Semaphore>,
+    protected_slots: Arc<Semaphore>,
+    watch_slots: Arc<Semaphore>,
+    published: Published,
     scope: Scope,
     hosts: BTreeMap<String, Arc<Mutex<Auth>>>,
     backend: Backend,
     member_host: Option<String>,
     throttle: cthl::Throttle<cthl::MemoryStore>,
     clock: Arc<dyn Clock>,
+}
+enum Published {
+    Global(watch::Receiver<Arc<GlobalPublic>>),
+    Community(watch::Receiver<Arc<TrustFeed>>),
 }
 enum Backend {
     Global(Box<Mutex<GlobalService>>),
@@ -108,6 +116,7 @@ impl Door {
             .map_err(|_| Error::Unavailable)?;
         let now = clock.now();
         let global = GlobalService::open(&db, &config, now).await?;
+        let published = Published::Global(global.changes.subscribe());
         let mut hosts = BTreeMap::new();
         let wallet = format!("wallet.{}", config.domain);
         let root = format!("api.root.{}", config.domain);
@@ -169,6 +178,10 @@ impl Door {
         Ok(Self {
             inner: Arc::new(Inner {
                 requests: Arc::new(Mutex::new(())),
+                public_slots: Arc::new(Semaphore::new(32)),
+                protected_slots: Arc::new(Semaphore::new(32)),
+                watch_slots: Arc::new(Semaphore::new(16)),
+                published,
                 scope: Scope::Global,
                 hosts,
                 backend: Backend::Global(Box::new(Mutex::new(global))),
@@ -183,7 +196,10 @@ impl Door {
         &self,
         action: &Action,
     ) -> Option<tokio::sync::OwnedMutexGuard<()>> {
-        if action.access == Access::Public {
+        if matches!(
+            action.name,
+            "global_public" | "trust_feed" | "trust_changes"
+        ) {
             None
         } else {
             Some(self.inner.requests.clone().lock_owned().await)
@@ -247,6 +263,7 @@ impl Door {
         let mut hosts = BTreeMap::new();
         let member_host = format!("api.{}.{}", config.community, config.domain);
         let community = CommunityService::open(&db, config, clock.clone()).await?;
+        let published = Published::Community(community.changes.subscribe());
         let config = &community.config;
         for (host, role, scope, operator) in [
             (
@@ -307,6 +324,10 @@ impl Door {
         Ok(Self {
             inner: Arc::new(Inner {
                 requests: Arc::new(Mutex::new(())),
+                public_slots: Arc::new(Semaphore::new(32)),
+                protected_slots: Arc::new(Semaphore::new(32)),
+                watch_slots: Arc::new(Semaphore::new(16)),
+                published,
                 scope: Scope::Community,
                 hosts,
                 backend: Backend::Community(Box::new(Mutex::new(community))),
@@ -344,18 +365,41 @@ impl Door {
     fn auth(&self, host: &str) -> Result<Arc<Mutex<Auth>>> {
         self.inner.hosts.get(host).cloned().ok_or(Error::WrongHost)
     }
-    pub(crate) fn complete_context(&self, mut ctx: Context) -> Result<Context> {
+    pub(crate) async fn complete_context(
+        &self,
+        action: &Action,
+        mut ctx: Context,
+    ) -> Result<Context> {
         ctx.now = self.inner.clock.now();
-        if ctx
-            .grant
-            .as_ref()
-            .is_some_and(|grant| grant.expires <= ctx.now)
+        // Body receipt and queue waits cannot preserve a logged-out, expired or
+        // revoked grant. Recheck the exact credential at execution time.
+        if !matches!(
+            action.name,
+            "global_public" | "trust_feed" | "trust_changes"
+        ) && let Some(token) = &ctx.token
         {
-            return Err(Error::Unauthorized);
+            if self.inner.member_host.as_deref() == Some(ctx.host.as_str()) {
+                let (grant, authentication) = self
+                    .community_backend()?
+                    .lock()
+                    .await
+                    .authenticate(token, ctx.now)
+                    .await?;
+                ctx.grant = Some(grant);
+                ctx.authentication = Some(authentication);
+            } else {
+                ctx.grant = Some(
+                    self.auth(&ctx.host)?
+                        .lock()
+                        .await
+                        .authenticate(token, ctx.now)
+                        .await?,
+                );
+            }
         }
         Ok(ctx)
     }
-    pub(crate) async fn authorize(&self, action: &Action, headers: &HeaderMap) -> Result<Context> {
+    pub(crate) async fn admit_request(&self, action: &Action) -> Result<OwnedSemaphorePermit> {
         // Service-wide quotas cannot be evaded with forged IPs, handles or fresh tokens.
         if !matches!(
             self.inner.throttle.check(b"aggregate", action.name).await,
@@ -363,6 +407,19 @@ impl Door {
         ) {
             return Err(Error::Throttled);
         }
+        let slots = if action.name == "trust_changes" {
+            &self.inner.watch_slots
+        } else if action.access == Access::Public {
+            &self.inner.public_slots
+        } else {
+            &self.inner.protected_slots
+        };
+        slots
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| Error::Throttled)
+    }
+    pub(crate) async fn authorize(&self, action: &Action, headers: &HeaderMap) -> Result<Context> {
         let host = headers
             .get("host")
             .and_then(|v| v.to_str().ok())
@@ -389,6 +446,15 @@ impl Door {
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.strip_prefix("Bearer "))
             .map(str::to_owned);
+        // Public metadata is independent of member credentials and activity.
+        let token = if matches!(
+            action.name,
+            "global_public" | "trust_feed" | "trust_changes"
+        ) {
+            None
+        } else {
+            token
+        };
         let (grant, authentication) = if let Some(token) = &token {
             if community_member {
                 let (grant, authentication) = self
@@ -517,12 +583,16 @@ impl Door {
         Ok(Empty {})
     }
     pub(crate) async fn global_public(&self, _: Context, _: Empty) -> Result<GlobalPublic> {
-        let global = self.global_backend()?.lock().await;
-        Ok(GlobalPublic {
-            key_ring: global.public.key_ring.clone(),
-            issuer: global.public.issuer.clone(),
-            status: global.public.status.clone(),
-        })
+        match &self.inner.published {
+            Published::Global(public) => Ok(public.borrow().as_ref().clone()),
+            _ => Err(Error::WrongHost),
+        }
+    }
+    pub(crate) fn community_public(&self) -> Result<watch::Receiver<Arc<TrustFeed>>> {
+        match &self.inner.published {
+            Published::Community(public) => Ok(public.clone()),
+            _ => Err(Error::WrongHost),
+        }
     }
     pub(crate) async fn passport_challenge(&self, ctx: Context, _: Empty) -> Result<Bytes> {
         let global = self.global_backend()?.lock().await;
@@ -611,3 +681,7 @@ impl Door {
         Ok(Empty {})
     }
 }
+
+#[cfg(all(test, feature = "development-gate"))]
+#[path = "service_tests.rs"]
+mod tests;

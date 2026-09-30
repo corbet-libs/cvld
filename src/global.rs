@@ -10,6 +10,7 @@ pub type Facade =
 pub struct GlobalService {
     pub facade: Facade,
     pub public: GlobalPublic,
+    pub changes: tokio::sync::watch::Sender<std::sync::Arc<GlobalPublic>>,
     pub publication_seconds: u64,
     #[cfg(feature = "development-gate")]
     pub development_expiry: u64,
@@ -122,9 +123,11 @@ impl GlobalService {
             issuer: facade.issuer_public_key().to_bytes(),
             status,
         };
+        let (changes, _) = tokio::sync::watch::channel(std::sync::Arc::new(public.clone()));
         Ok(Self {
             facade,
             public,
+            changes,
             publication_seconds: config.publication_seconds,
             #[cfg(feature = "development-gate")]
             development_expiry,
@@ -141,6 +144,8 @@ impl GlobalService {
             .key_ring()
             .map_err(|_| Error::Unavailable)?
             .to_cbor();
+        self.changes
+            .send_replace(std::sync::Arc::new(self.public.clone()));
         Ok(())
     }
 }
