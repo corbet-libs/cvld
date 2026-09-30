@@ -5,6 +5,7 @@ use crate::{
 };
 use cpky::{LibsqlStore, Passkeys, PendingAuthentication, PendingRegistration, Uuid};
 use std::{collections::HashMap, sync::Arc};
+use subtle::ConstantTimeEq;
 
 pub struct Auth {
     pub passkeys: Arc<Passkeys<LibsqlStore>>,
@@ -42,7 +43,13 @@ impl Auth {
         capacity: usize,
         lifetime: u64,
     ) -> Result<Self> {
-        if capacity == 0 || lifetime == 0 || lifetime > 3600 {
+        if capacity == 0
+            || lifetime == 0
+            || lifetime > 3600
+            || bootstrap
+                .as_ref()
+                .is_some_and(|capability| !(32..=1024).contains(&capability.len()))
+        {
             return Err(Error::Invalid);
         }
         Ok(Self {
@@ -72,8 +79,13 @@ impl Auth {
         }
         let user = if let Some(operator) = self.operator {
             // Bootstrap is a provisioned random capability, never a caller-selected role.
-            if self.bootstrap.as_deref().map(|v| v.as_str()) != request.bootstrap.as_deref()
-                || self.bootstrap.is_none()
+            if !self
+                .bootstrap
+                .as_ref()
+                .zip(request.bootstrap.as_ref())
+                .is_some_and(|(expected, supplied)| {
+                    bool::from(expected.as_bytes().ct_eq(supplied.as_bytes()))
+                })
             {
                 return Err(Error::Forbidden);
             }

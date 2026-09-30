@@ -23,6 +23,7 @@ Surveyed crates.io, official documentation and GitHub on 2026-09-30:
 | [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) 7.13 | Generate the TypeScript interface from the emitted OpenAPI. |
 | [cglb](https://github.com/corbet-libs/cglb) | Own global uniqueness, gate execution, suspension and blind issuance. |
 | [cpky](https://github.com/corbet-foss/cpky) | UV-required wallet/operator WebAuthn; no new passkey implementation. |
+| [subtle](https://docs.rs/subtle/latest/subtle/trait.ConstantTimeEq.html) 2.6 | Compare bootstrap capability contents without ordinary string-comparison timing; already shared by cryptographic dependencies. |
 | [cthl](https://github.com/corbet-foss/cthl) | Maintained governor-backed throttling with bounded memory. |
 
 Storage and cryptography remain in the existing crlt, cpsd and csgn leaves.
@@ -57,7 +58,7 @@ committed generated types with `openapi-fetch`.
 For a global service, provision a 32-byte csgn signing seed, a cpsd issuer secret
 in its leaf wire format, a 32-byte uniqueness key, a COSE-signed cglb policy,
 and that policy authority's public key ring. The supplied operator UUID and
-initial registration capability select the root account; the caller cannot
+random initial registration capability (32–1024 bytes) select the root account; the caller cannot
 request a role. Registering a passkey requires a real WebAuthn ceremony with
 user verification. No key generation, credential discovery or deployment runs
 as a side effect of starting the door.
