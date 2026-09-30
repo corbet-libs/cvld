@@ -191,10 +191,10 @@ impl Door {
         if action.scope != Scope::Both && action.scope != self.inner.scope {
             return Err(Error::WrongHost);
         }
-        if let Some(origin) = headers.get("origin") {
-            if origin.to_str().ok() != Some(format!("https://{host}").as_str()) {
-                return Err(Error::Forbidden);
-            }
+        if let Some(origin) = headers.get("origin")
+            && origin.to_str().ok() != Some(format!("https://{host}").as_str())
+        {
+            return Err(Error::Forbidden);
         }
         let now = self.inner.clock.now();
         let token = headers
