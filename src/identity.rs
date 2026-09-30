@@ -23,8 +23,8 @@ pub async fn bind(db: &Db, kind: &str, scope: &str) -> Result<()> {
         .await
         .map_err(|_| Error::Unavailable)?;
     if let Some(row) = rows.first() {
-        if row.get::<String>(0).map_err(|_| Error::Unavailable)? != kind
-            || row.get::<String>(1).map_err(|_| Error::Unavailable)? != scope
+        if row.get_str(0).map_err(|_| Error::Unavailable)? != kind
+            || row.get_str(1).map_err(|_| Error::Unavailable)? != scope
         {
             return Err(Error::Invalid);
         }
