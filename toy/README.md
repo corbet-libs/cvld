@@ -80,7 +80,9 @@ not validate the client contract.
 
 The scale script creates **200 distinct wallets**, each joining **all five
 communities**: 1,000 community passkeys, voucher redemptions and admissions. Each
-member also logs in again and reads the populated lobby. It reports nearest-rank
+member also logs in again and reads the populated lobby. The explicit test
+configuration allows 1,024 ephemeral sessions per service, since frozen wall time
+keeps the scale run's sessions live. It reports nearest-rank
 p50/p95/p99 latency per service scope and action, call/error counts, total rows
 read/returned, maximum rows read per call, and the number of calls whose reads
 exceed their SQL result rows. Expected voucher replay refusals are included in
