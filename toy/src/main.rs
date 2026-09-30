@@ -730,6 +730,15 @@ impl World {
                     foreign.update(&feed, self.now).is_err(),
                     "foreign-community trust accepted",
                 )?;
+                let mut substituted = feed.clone();
+                substituted.schema_versions = feed.schema.clone();
+                require(
+                    self.communities[index]
+                        .verifier
+                        .update(&substituted, self.now)
+                        .is_err(),
+                    "schema accepted as schema history",
+                )?;
                 let mut damaged_feed = feed.clone();
                 let end = damaged_feed.settings.len() - 1;
                 damaged_feed.settings[end] ^= 1;

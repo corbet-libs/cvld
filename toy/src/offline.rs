@@ -78,12 +78,7 @@ impl Verifier {
                 },
             )
             .map_err(|_| "invalid snapshot")?;
-            let cose_kind = match name {
-                "settings" => csgn::Kind::SettingsSnapshot,
-                "schema" | "schema_versions" => csgn::Kind::SchemaSnapshot,
-                "communities" => csgn::Kind::CommunitiesSnapshot,
-                _ => csgn::Kind::RevocationListSnapshot,
-            };
+            let cose_kind = kind.signing_kind();
             // cplc above verifies the exact protected kind; retain expiry for offline use.
             fresh_until = fresh_until.min(
                 self.ring
@@ -96,6 +91,18 @@ impl Verifier {
                 "settings" => settings = document.content,
                 "schema" if document.content["version"] != manifest.schema_version => {
                     return Err("schema manifest mismatch".into());
+                }
+                "schema_versions" => {
+                    let archive: cplc::SchemaVersions = serde_json::from_value(document.content)
+                        .map_err(|_| "schema archive purpose or shape")?;
+                    if archive.current != manifest.schema_version
+                        || !archive
+                            .versions
+                            .iter()
+                            .any(|version| version.schema.version == archive.current)
+                    {
+                        return Err("schema archive disagrees with manifest".into());
+                    }
                 }
                 "revocations" => {
                     revocations =
