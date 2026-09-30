@@ -254,3 +254,47 @@ async fn maintenance_refreshes_public_expiry_without_a_member_query() {
     assert_eq!(status.epoch, 1);
     assert_eq!(status.policy_revision, 1);
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn cors_never_authorizes_a_foreign_origin_or_host() {
+    let service = global(30).await;
+    let http = reqwest::Client::new();
+    for (host, origin, allowed) in [
+        (WALLET, "https://wallet.example.test", true),
+        (WALLET, "https://evil.example.test", false),
+        (
+            "wallet.example.test.evil.test",
+            "https://wallet.example.test.evil.test",
+            false,
+        ),
+    ] {
+        let response = http
+            .request(
+                reqwest::Method::OPTIONS,
+                format!("{}/v1/register_begin", service.base),
+            )
+            .header("host", host)
+            .header("origin", origin)
+            .header("access-control-request-method", "POST")
+            .header("access-control-request-headers", "content-type")
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(
+            response
+                .headers()
+                .get("access-control-allow-origin")
+                .is_some(),
+            allowed
+        );
+    }
+    let response = http
+        .post(format!("{}/v1/register_begin", service.base))
+        .header("host", WALLET)
+        .header("origin", "https://evil.example.test")
+        .json(&json!({}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 403);
+}

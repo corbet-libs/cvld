@@ -16,6 +16,7 @@ cglb = { git = "https://github.com/corbet-libs/cglb", rev = "bf259283e64219e820e
 cpky = { git = "https://github.com/corbet-foss/cpky", rev = "ae52e4dbf9c7aa954991927e9ece9f70c81ac5ff" }
 cthl = { git = "https://github.com/corbet-foss/cthl", rev = "7f1a38de4285dee4b15ee8f9e82c1cb257513644" }
 axum = "0.8.9"
+tower-http = { version = "0.6.11", features = ["cors"] }
 utoipa = "6.0.0"
 clap = { version = "4.6.7", features = ["derive", "env", "string"] }
 rmcp = { version = "3.5.0", features = ["server", "client", "transport-io", "transport-child-process"] }

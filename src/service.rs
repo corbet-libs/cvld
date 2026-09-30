@@ -171,6 +171,26 @@ impl Door {
         }
         Ok(())
     }
+    pub(crate) fn allows_origin(&self, host: &str, origin: &str) -> bool {
+        self.inner.hosts.contains_key(host) && (origin == format!("https://{host}"))
+    }
+    pub(crate) fn cors(&self) -> tower_http::cors::CorsLayer {
+        use axum::http::{Method, header};
+        use tower_http::cors::{AllowOrigin, CorsLayer};
+        let door = self.clone();
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::predicate(move |origin, request| {
+                request
+                    .headers
+                    .get(header::HOST)
+                    .and_then(|h| h.to_str().ok())
+                    .zip(origin.to_str().ok())
+                    .is_some_and(|(host, origin)| door.allows_origin(host, origin))
+            }))
+            .allow_methods([Method::POST])
+            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+            .max_age(Duration::from_secs(600))
+    }
     fn auth(&self, host: &str) -> Result<Arc<Mutex<Auth>>> {
         self.inner.hosts.get(host).cloned().ok_or(Error::WrongHost)
     }
@@ -192,7 +212,10 @@ impl Door {
             return Err(Error::WrongHost);
         }
         if let Some(origin) = headers.get("origin")
-            && origin.to_str().ok() != Some(format!("https://{host}").as_str())
+            && !origin
+                .to_str()
+                .ok()
+                .is_some_and(|origin| self.allows_origin(&host, origin))
         {
             return Err(Error::Forbidden);
         }

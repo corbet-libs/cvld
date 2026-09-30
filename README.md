@@ -16,6 +16,7 @@ Surveyed crates.io, official documentation and GitHub on 2026-09-30:
 | Dependency | Why |
 |---|---|
 | [axum](https://github.com/tokio-rs/axum) 0.8 | Maintained Tokio HTTP routing and bounded JSON extraction. |
+| [tower-http](https://github.com/tower-rs/tower-http) 0.6 | Standard CORS handling with an exact host/origin allow-list; shares the existing HTTP middleware dependency. |
 | [utoipa](https://github.com/juhaku/utoipa) 6 | Rust request/response schemas and OpenAPI 3.1. |
 | [rmcp](https://github.com/modelcontextprotocol/rust-sdk) 3.5 | Official Rust MCP SDK; reuse protocol and transport handling. |
 | [clap](https://github.com/clap-rs/clap) 4.6 | Build subcommands directly from action metadata. |

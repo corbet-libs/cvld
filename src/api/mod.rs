@@ -203,7 +203,7 @@ macro_rules! actions {
                     }
                 ));
             } )*
-            router.layer(DefaultBodyLimit::max(256 * 1024)).with_state(door)
+            router.layer(DefaultBodyLimit::max(256 * 1024)).layer(door.cors()).with_state(door)
         }
     }
 }
