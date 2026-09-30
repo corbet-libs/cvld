@@ -1,0 +1,122 @@
+use crate::{
+    api::*,
+    config::Config,
+    error::{Error, Result},
+};
+use cglb::{
+    Global, cpsd,
+    crlt::{Db, Migration},
+    csgn,
+};
+pub type Facade = Global<cglb::storage::LibsqlStore, csgn::LibsqlStore>;
+pub struct GlobalService {
+    pub facade: Facade,
+    pub public: GlobalPublic,
+    pub publication_seconds: u64,
+    pub development_expiry: u64,
+}
+impl GlobalService {
+    pub async fn open(db: &Db, config: &Config, now: u64) -> Result<Self> {
+        use csgn::Store;
+        db.migrate(&[
+            Migration::new(1, "global", cglb::storage::SCHEMA),
+            Migration::new(2, "signing", csgn::SCHEMA),
+            Migration::new(3, "passkeys", cpky::LIBSQL_SCHEMA),
+        ])
+        .await
+        .map_err(|_| Error::Unavailable)?;
+        let store = csgn::LibsqlStore::new(db.community("global").map_err(|_| Error::Invalid)?);
+        let exists = store
+            .load("cglb:global")
+            .await
+            .map_err(|_| Error::Unavailable)?
+            .is_some();
+        let secret = csgn::SecretKey::from_seed(&mut Config::seed(&config.signing_seed_file)?);
+        let signer = if exists {
+            csgn::PersistentSigner::open(store, "cglb:global", secret, now).await
+        } else {
+            csgn::PersistentSigner::create(
+                store,
+                "cglb:global",
+                secret,
+                now,
+                config.signer_max_seconds,
+            )
+            .await
+        }
+        .map_err(|_| Error::Unavailable)?;
+        let issuer = cpsd::IssuerKey::from_secret_bytes(&Config::secret(&config.issuer_key_file)?)
+            .map_err(|_| Error::Invalid)?;
+        let mut mode = cglb::Mode::Production;
+        if config.development {
+            #[cfg(feature = "development-gate")]
+            {
+                mode = cglb::Mode::Development;
+            }
+            #[cfg(not(feature = "development-gate"))]
+            {
+                return Err(Error::Forbidden);
+            }
+        }
+        let mut facade = Global::open(
+            cglb::storage::LibsqlStore::new(db, "global").map_err(|_| Error::Invalid)?,
+            issuer,
+            signer,
+            cglb::FingerprintKey::from_bytes(&mut Config::seed(&config.uniqueness_key_file)?),
+            mode,
+            cglb::Limits {
+                challenge_ttl: 60,
+                pending_capacity: config
+                    .pending_capacity
+                    .try_into()
+                    .map_err(|_| Error::Invalid)?,
+            },
+        )
+        .await
+        .map_err(|_| Error::Unavailable)?;
+        let policy = std::fs::read(&config.policy_file).map_err(|_| Error::Unavailable)?;
+        let authority = csgn::KeyRing::from_cbor(
+            &std::fs::read(&config.policy_authority_file).map_err(|_| Error::Unavailable)?,
+        )
+        .map_err(|_| Error::Invalid)?;
+        facade
+            .install_policy(&policy, &authority, now)
+            .await
+            .map_err(|_| Error::Refused)?;
+        let status = facade
+            .signed_status(now, now + config.publication_seconds)
+            .await
+            .map_err(|_| Error::Refused)?;
+        let verified = facade
+            .key_ring()
+            .map_err(|_| Error::Unavailable)?
+            .verify(&status, csgn::Kind::RevocationListSnapshot, now)
+            .map_err(|_| Error::Unavailable)?;
+        let view: cglb::Status =
+            serde_json::from_slice(verified.payload()).map_err(|_| Error::Unavailable)?;
+        let public = GlobalPublic {
+            key_ring: facade.key_ring().map_err(|_| Error::Unavailable)?.to_cbor(),
+            issuer: facade.issuer_public_key().to_bytes(),
+            status,
+        };
+        Ok(Self {
+            facade,
+            public,
+            publication_seconds: config.publication_seconds,
+            development_expiry: view.shared_expiry,
+        })
+    }
+    pub async fn refresh(&mut self, now: u64) -> Result<()> {
+        self.public.status = self
+            .facade
+            .signed_status(now, now + self.publication_seconds)
+            .await
+            .map_err(|_| Error::Refused)?;
+        self.public.key_ring = self
+            .facade
+            .key_ring()
+            .map_err(|_| Error::Unavailable)?
+            .to_cbor();
+        Ok(())
+    }
+}

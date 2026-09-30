@@ -1,0 +1,77 @@
+use cvld::{
+    api, cli,
+    config::Config,
+    error::{Error, Result},
+    service::{Door, SystemClock},
+};
+use rmcp::ServiceExt;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() {
+    if let Err(error) = run().await {
+        eprintln!("{error}");
+        std::process::exit(1);
+    }
+}
+async fn run() -> Result<()> {
+    let matches = cli::command().get_matches();
+    let (name, args) = matches.subcommand().ok_or(Error::Invalid)?;
+    match name {
+        "openapi" => println!(
+            "{}",
+            api::openapi()
+                .to_pretty_json()
+                .map_err(|_| Error::Unavailable)?
+        ),
+        "serve" => {
+            let (scope, args) = args.subcommand().ok_or(Error::Invalid)?;
+            let config = Config::read(args.get_one::<String>("config").ok_or(Error::Invalid)?)?;
+            let listen = config.listen.clone();
+            let door = match scope {
+                "global" => Door::global(config, Arc::new(SystemClock)).await?,
+                _ => return Err(Error::Unavailable),
+            };
+            let listener = tokio::net::TcpListener::bind(listen)
+                .await
+                .map_err(|_| Error::Unavailable)?;
+            axum::serve(listener, api::router(door))
+                .with_graceful_shutdown(async {
+                    let _ = tokio::signal::ctrl_c().await;
+                })
+                .await
+                .map_err(|_| Error::Unavailable)?;
+        }
+        _ => {
+            let token = matches
+                .get_one::<String>("session-file")
+                .map(|p| std::fs::read_to_string(p).map_err(|_| Error::Unavailable))
+                .transpose()?
+                .map(|s| s.trim().to_owned());
+            let client = cli::Client::new(
+                matches
+                    .get_one::<String>("url")
+                    .ok_or(Error::Invalid)?
+                    .clone(),
+                matches
+                    .get_one::<String>("host")
+                    .ok_or(Error::Invalid)?
+                    .clone(),
+                token,
+            )?;
+            if name == "mcp" {
+                let running = cvld::mcp::Mcp { client }
+                    .serve(rmcp::transport::stdio())
+                    .await
+                    .map_err(|_| Error::Unavailable)?;
+                running.waiting().await.map_err(|_| Error::Unavailable)?;
+            } else {
+                let request =
+                    serde_json::from_str(args.get_one::<String>("request").ok_or(Error::Invalid)?)
+                        .map_err(|_| Error::Invalid)?;
+                println!("{}", client.call(name, request).await?);
+            }
+        }
+    }
+    Ok(())
+}

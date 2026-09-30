@@ -1,0 +1,42 @@
+[package]
+name = "cvld"
+version = "0.2.0"
+edition = "2024"
+license = "FSL-1.1-ALv2"
+repository = "https://github.com/corbet-libs/cvld"
+description = "The permanent door of the cmtymeet trust stack"
+publish = false
+
+[features]
+default = []
+development-gate = ["cglb/development-gate"]
+
+[dependencies]
+cglb = { git = "https://github.com/corbet-libs/cglb", rev = "bf259283e64219e820e9312e9ad5b0ecdae2e846" }
+cpky = { git = "https://github.com/corbet-foss/cpky", rev = "ae52e4dbf9c7aa954991927e9ece9f70c81ac5ff" }
+cthl = { git = "https://github.com/corbet-foss/cthl", rev = "7f1a38de4285dee4b15ee8f9e82c1cb257513644" }
+axum = "0.8.9"
+utoipa = "6.0.0"
+clap = { version = "4.6.7", features = ["derive", "env", "string"] }
+rmcp = { version = "3.5.0", features = ["server", "client", "transport-io", "transport-child-process"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = "0.4"
+thiserror = "2"
+zeroize = "=1.8.2"
+
+[dev-dependencies]
+tempfile = "3"
+webauthn-authenticator-rs = { version = "0.5.5", default-features = false, features = ["softtoken"] }
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.test]
+opt-level = 3
+
+[lints.rust]
+unsafe_code = "forbid"
