@@ -62,7 +62,7 @@ pub async fn global(burst: u32) -> Running {
         scope: "global".into(),
         revision: 1,
         epoch: 1,
-        shared_expiry: NOW + 86_400 * 40,
+        shared_expiry: (NOW / 86_400 + 40) * 86_400,
         gates: vec![cglb::GatePolicy {
             gate: "development".into(),
             provider: "cglb.test".into(),

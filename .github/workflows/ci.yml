@@ -37,6 +37,8 @@ jobs:
         run: |
           if cargo check --locked --release --features development-gate > release-gate.log 2>&1; then exit 1; fi
           grep -q 'development-gate is forbidden in release builds' release-gate.log
+          if CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true cargo check --locked --release --features development-gate > release-debug-gate.log 2>&1; then exit 1; fi
+          grep -q 'development-gate is forbidden in release builds' release-debug-gate.log
       - name: Regenerate protocol and client
         run: |
           cargo run --locked --release -- openapi > docs/openapi.json
