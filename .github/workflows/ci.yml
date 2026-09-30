@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 22
       - run: rustc --version
-      - run: test -f Cargo.lock || cargo generate-lockfile
+      - run: cargo update --workspace
       - run: cargo fmt --all --check
       - run: cargo clippy --locked --all-targets --features development-gate -- -D warnings
       - run: cargo test --locked --features development-gate
