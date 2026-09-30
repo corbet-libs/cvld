@@ -94,7 +94,7 @@ impl Door {
                 .bytes()
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'.' || c == b'-')
             || config.publication_seconds < 172_800
-            || config.publication_seconds % 86_400 != 0
+            || !config.publication_seconds.is_multiple_of(86_400)
         {
             return Err(Error::Invalid);
         }
@@ -232,7 +232,7 @@ impl Door {
                 .bytes()
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'.' || c == b'-')
             || config.publication_seconds < 172_800
-            || config.publication_seconds % 86_400 != 0
+            || !config.publication_seconds.is_multiple_of(86_400)
         {
             return Err(Error::Invalid);
         }
