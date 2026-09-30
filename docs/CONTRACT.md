@@ -233,3 +233,10 @@ All HTTP successes, failures and fallbacks carry `Cache-Control: no-store`.
 
 Initial seals are refused for Free fields. cmnt omits a formerly restricted
 field's stored seal while that field is Free, permitting renewal after loosening.
+
+The TypeScript and Rust clients accept HTTPS service origins and explicit HTTP
+loopback only. The TypeScript fetch boundary refuses redirects and cross-origin
+per-call overrides, disables ambient cookies, storage and referrer transmission.
+CI checks full matching first-party Git pins in resolved metadata and dependency
+declarations, including transitive dependencies. Workflow actions use immutable
+upstream commits; the Rust compiler remains current stable.

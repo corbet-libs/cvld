@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import { checkPins } from './check-pins.mjs';
 
 const revision = '6b94dacd7fa04aa8847c62c6471a1fc5c0f6c9dc';
@@ -45,4 +46,14 @@ test('reject floating transitive declarations even with a pinned resolution', ()
 test('require the crlt Git dependency', () => {
   assert.throws(() => checkPins({ packages: [pkg('crbk')] }), /Missing/);
   assert.throws(() => checkPins({ packages: [pkg('crbk'), pkg('crlt')] }), /unpinned/);
+});
+
+test('pin every CI action while selecting current stable Rust', () => {
+  const workflow = readFileSync(new URL('./workflows/ci.yml', import.meta.url), 'utf8');
+  const actions = [...workflow.matchAll(/uses:\s*([\w./-]+)@(\S+)/g)];
+  assert.ok(actions.length > 0);
+  for (const [, name, revision] of actions) {
+    assert.match(revision, /^[a-f0-9]{40}$/, `${name} must be immutable`);
+  }
+  assert.match(workflow, /toolchain: stable/);
 });
