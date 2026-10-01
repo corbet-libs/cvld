@@ -154,12 +154,18 @@ and change classification remain cshm rules; no profile values are collected.
 
 `trust_feed` serves five signed snapshots (settings, current schema, schema
 versions and their cshm change classifications, public community directory,
-revocations), the public key ring and a signed manifest.
+revocations), the public key ring, original signed ring-transition history and a
+signed manifest. Beacon under Policy owns aggregation and verification; the door
+only copies its original signed bytes into the registered transport response.
+Empty transition history is omitted for existing wire compatibility.
 The manifest's fixed `cplc.trust.v1` purpose separates it from flat settings;
 it binds community, durable revision, effective epoch, key ring and schema
 version. Each snapshot has its own revision and the same effective policy epoch.
-Consumers authenticate the origin/ring, verify the protected COSE kind and scope,
-and retain monotonic revision and epoch floors.
+Consumers obtain the initial publishing ring from trusted deployment configuration,
+verify original csgn transitions against the exact installed predecessor, verify
+protected COSE kinds and scope, and retain monotonic ring/revision/epoch floors.
+Transport TLS does not grant authority to a response-provided ring. The door
+does not reinterpret transition proofs or implement cryptography.
 
 `trust_changes` accepts a public revision and returns an announcement immediately
 when newer material exists, or after a bounded 25-second wait. cfrm pulls this
