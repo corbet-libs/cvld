@@ -46,6 +46,7 @@ path = "src/main.rs"
 required-features = ["server"]
 
 [dev-dependencies]
+futures-util = "0.3"
 passkey = "0.4"
 async-trait = "0.1"
 cvch = { git = "https://github.com/corbet-foss/cvch", branch = "main" }

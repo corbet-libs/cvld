@@ -35,7 +35,7 @@ async fn committed_logout_with_a_lost_or_malformed_response_is_unknown_and_never
     use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
     let service = global(100).await;
     let mut root = enrol(&service, ROOT, Some("synthetic-operator-enrolment-capability")).await;
-    for mode in 0..5 {
+    for mode in 0..8 {
         let session = login(&service, ROOT, &mut root.authenticator, &root.user, &root.credential).await;
         let upstream = client(&service, ROOT, Some(&session));
         let count = Arc::new(AtomicUsize::new(0));
@@ -51,7 +51,15 @@ async fn committed_logout_with_a_lost_or_malformed_response_is_unknown_and_never
                     1 => Response::builder().status(403).body(Body::from("{\"error\":\"unavailable\"}")).unwrap(),
                     2 => Response::new(Body::from("null")),
                     3 => Response::builder().status(302).header("location", "/v1/logout").body(Body::empty()).unwrap(),
-                    _ => Response::new(Body::from("{\"error\":\"unauthorized\"}")),
+                    4 => Response::new(Body::from("{\"error\":\"unauthorized\"}")),
+                    5 => Response::builder().header("content-length", 17 * 1024 * 1024).body(Body::empty()).unwrap(),
+                    6 => Response::new(Body::from_stream(futures_util::stream::iter([
+                        Ok(axum::body::Bytes::from_static(b"{")),
+                        Err(std::io::Error::other("synthetic truncated response")),
+                    ]))),
+                    _ => Response::new(Body::from_stream(futures_util::stream::iter([
+                        Ok::<_, std::io::Error>(vec![b' '; 17 * 1024 * 1024]),
+                    ]))),
                 }
             }
         }));
