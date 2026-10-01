@@ -323,3 +323,17 @@ Upstream webauthn-rs-core 0.5.5 still refuses cross-origin **registration** clie
 data (`crossOrigin: true`) with no public configuration switch. Keyhole therefore
 uses top-level registration until a reviewed upstream API supports the iframe.
 The vault-origin software test runs that top-level case; it is not iframe proof.
+
+## Portable owner client
+
+Feature `client` exposes the original generated OpenAPI operations and a portable
+Client/Transport forwarding port without the server dependency graph. `server`
+remains the default feature and binary requirement. `client-http` reuses the
+native HttpClient that the existing door CLI tests exercise. HTTPS binds the
+host to the selected origin; loopback HTTP supports the real service fixtures.
+The transport disables redirects and proxies, applies a deadline and a 16 MiB
+response bound, and keeps bearer storage in a zeroizing wrapper.
+
+cfyr consumes this client behind cmsg. Generated operation metadata is never an
+authorization capability; the server still checks the exact current session,
+role and scope. Default generated contracts omit the synthetic development gate.
