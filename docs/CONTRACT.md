@@ -80,8 +80,9 @@ only if both TURSO_URL and TURSO_TOKEN are nonempty; use a disposable database.
 currently authenticated live passkey through cmbr. Repeating the same binding
 is idempotent; replacing it with another raw public key is refused. Registration
 alone and `credential_issue.devices` do not establish this authority. The door
-drains the durable revocation outbox and republishes the trust feed after a new
-binding. `device_keys` returns only bindings whose passkeys remain live.
+drains the durable revocation outbox and republishes the trust feed only when
+revocations were actually flushed. Adding a binding alone leaves public feed
+bytes unchanged. `device_keys` returns only bindings whose passkeys remain live.
 
 cplc obtains those keys independently through cmbr's held membership lease and
 refuses any unbound or removed requested key before signing. Revoking a passkey
@@ -289,7 +290,7 @@ identity, lease extension or login-date record.
 
 The action registry exposes discovery uniformly over HTTP, OpenAPI, CLI, MCP and
 the generated TypeScript client. The door serializes ckyh's server-built options
-without rebuilding them. Keyhole must preserve those options (including user ID,
+without rebuilding them. Device Passkeys (`cpky`) preserves those options (including user ID,
 RP, challenge, required UV/residency and lists), adding only its local PRF input.
 It strips the entire `prf` client-extension entry before forwarding any response,
 and passes the secret only into the local vault capability. A missing PRF can
