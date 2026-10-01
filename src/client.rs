@@ -3,7 +3,7 @@
 
 use crate::error::{Error, Result};
 use serde_json::Value;
-use std::{future::Future, sync::LazyLock};
+use std::{collections::BTreeMap, future::Future, sync::LazyLock};
 
 #[cfg(all(feature = "client-http", not(target_arch = "wasm32")))]
 #[path = "client_http.rs"]
@@ -12,9 +12,45 @@ mod http;
 pub use http::HttpClient;
 
 static DOCUMENT: LazyLock<Value> = LazyLock::new(|| {
-    serde_json::from_str(include_str!("../docs/openapi.json"))
-        .expect("the checked generated door contract is JSON")
+    #[cfg(feature = "server")]
+    let source = crate::api::openapi_json();
+    #[cfg(not(feature = "server"))]
+    let source = include_str!("../docs/openapi.json");
+    serde_json::from_str(&source).expect("the checked generated door contract is JSON")
 });
+
+static RESPONSES: LazyLock<Result<BTreeMap<String, jsonschema::Validator>>> =
+    LazyLock::new(|| {
+        let paths = DOCUMENT["paths"].as_object().ok_or(Error::Reconcile)?;
+        paths
+            .values()
+            .map(|item| {
+                let operation = &item["post"];
+                let name = operation["operationId"].as_str().ok_or(Error::Reconcile)?;
+                let mut schema = operation["responses"]["200"]["content"]["application/json"]
+                    ["schema"]
+                    .clone();
+                schema
+                    .as_object_mut()
+                    .ok_or(Error::Reconcile)?
+                    .insert("components".into(), DOCUMENT["components"].clone());
+                // Network and file resolvers are disabled in Cargo features.
+                let validator = jsonschema::validator_for(&schema).map_err(|_| Error::Reconcile)?;
+                Ok((name.to_owned(), validator))
+            })
+            .collect()
+    });
+
+/// Validate a successful response against the exact owner's generated DTO schema.
+/// Malformed replies after dispatch are uncertain, even if JSON parsing succeeds.
+pub fn validate_response(name: &str, response: &Value) -> Result<()> {
+    let validators = RESPONSES.as_ref().map_err(|_| Error::Reconcile)?;
+    let validator = validators.get(name).ok_or(Error::Invalid)?;
+    if !validator.is_valid(response) {
+        return Err(Error::Reconcile);
+    }
+    Ok(())
+}
 
 /// Original owner schema, including exact roles, scopes, effects and JSON types.
 pub fn contract() -> &'static Value {
@@ -74,6 +110,8 @@ impl<T: Transport> Client<T> {
     /// Forward one registered operation, preserving the owner's response/error.
     pub async fn call(&mut self, name: &str, request: Value) -> Result<Value> {
         let action = action(name).ok_or(Error::Invalid)?;
-        self.transport.send(action.path(), request).await
+        let response = self.transport.send(action.path(), request).await?;
+        validate_response(name, &response)?;
+        Ok(response)
     }
 }

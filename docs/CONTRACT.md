@@ -345,3 +345,11 @@ bodies retain their exact category. A cancelled in-flight client future also has
 an unknown effect; the embedding lifecycle must reconcile, never blindly repeat.
 The native regression actually commits logout through a real door, then corrupts
 or replaces only its response and checks exactly one dispatch plus revoked session.
+
+
+Successful client responses are checked against the door's generated JSON Schema
+with maintained `jsonschema`, with network and file resolution disabled. A reply
+that is valid JSON but has the wrong DTO shape remains an uncertain post-dispatch
+outcome (`Reconcile`); clients never retry a record operation automatically. The
+server build consumes its live registry; portable device builds consume the exact
+committed OpenAPI projection verified by CI.

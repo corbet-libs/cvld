@@ -10,11 +10,12 @@ publish = false
 [features]
 default = ["server"]
 server = ["client-http", "dep:cmty", "dep:clbs", "dep:ed25519-dalek", "dep:cpsd", "dep:crlt", "dep:csgn", "dep:cglb", "dep:ckyh", "dep:cthl", "dep:axum", "dep:tower-http", "dep:utoipa", "dep:clap", "dep:rmcp", "dep:tokio", "dep:uuid", "dep:chrono", "dep:rand", "dep:subtle"]
-client = []
+client = ["dep:jsonschema"]
 client-http = ["client", "dep:reqwest"]
 development-gate = ["server", "cglb/development-gate"]
 
 [dependencies]
+jsonschema = { version = "0.58", default-features = false, optional = true }
 cmty = { git = "https://github.com/corbet-libs/cmty", branch = "main", optional = true }
 clbs = { git = "https://github.com/corbet-foss/clbs", branch = "main", optional = true }
 ed25519-dalek = { version = "2.2", optional = true }

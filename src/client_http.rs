@@ -97,11 +97,7 @@ impl HttpClient {
             });
         }
         let value: Value = serde_json::from_slice(&body).map_err(|_| Error::Reconcile)?;
-        // Every registered door response is an object. Exact DTO/schema checks
-        // remain in the generated owner contract and typed lifecycle consumer.
-        if !value.is_object() || value.get("error").is_some() {
-            return Err(Error::Reconcile);
-        }
+        super::validate_response(name, &value)?;
         Ok(value)
     }
 }

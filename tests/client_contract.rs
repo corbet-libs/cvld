@@ -80,7 +80,7 @@ async fn committed_logout_with_a_lost_or_malformed_response_is_unknown_and_never
         Some("synthetic-operator-enrolment-capability"),
     )
     .await;
-    for mode in 0..8 {
+    for mode in 0..10 {
         let session = login(
             &service,
             ROOT,
@@ -122,9 +122,11 @@ async fn committed_logout_with_a_lost_or_malformed_response_is_unknown_and_never
                                 Ok(axum::body::Bytes::from_static(b"{")),
                                 Err(std::io::Error::other("synthetic truncated response")),
                             ]))),
-                            _ => Response::new(Body::from_stream(futures_util::stream::iter([
+                            7 => Response::new(Body::from_stream(futures_util::stream::iter([
                                 Ok::<_, std::io::Error>(vec![b' '; 17 * 1024 * 1024]),
                             ]))),
+                            8 => Response::new(Body::from("{\"unexpected\":true}")),
+                            _ => Response::new(Body::from("{\"issuer\":[]}")),
                         }
                     }
                 }),
