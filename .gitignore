@@ -7,4 +7,6 @@
 
 /browser-fixture.json
 /browser-fixture.json.pending
+/browser-native/
+/browser-native-build.json
 /.browser-tls/

@@ -32,7 +32,9 @@ workspace snapshot. Neither graph pins or replaces an upstream dependency.
 
 The resolver shares both locks with all jobs; browser policy and stable Clippy
 check the consumer graph, and nightly executes real Chrome vectors through the
-real native door and ephemeral TLS. `cargo llvm-cov --dep-coverage cvld` measures
+real native door and ephemeral TLS. The stable native job builds that fixture
+once; the browser job consumes the same-run executable and checks its lock
+against the shared server snapshot. `cargo llvm-cov --dep-coverage cvld` measures
 the production dependency, following the [upstream external-test workflow](https://github.com/taiki-e/cargo-llvm-cov#get-coverage-of-external-tests).
 JSON, LCOV and annotated reports cover the same execution and retain the strict
 source gate. A successful native run cannot substitute for this browser gate.
