@@ -1,9 +1,9 @@
-//! Browser Fetch adapter over maintained Gloo and Web Streams wrappers.
+//! Browser Fetch and Web Streams through maintained wasm-bindgen bindings.
 use super::Transport;
 use crate::error::{Error, Result};
-use futures_util::StreamExt;
 use serde_json::Value;
 use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::JsFuture;
 
 /// Origin-bound browser runtime. Authentication uses an explicit opaque session;
 /// ambient cookies, redirects, referrers and cached replies are disabled.
@@ -30,6 +30,7 @@ impl BrowserClient {
     /// Dispatch once. Any failure after Fetch starts requires reconciliation.
     pub async fn call(&self, name: &str, input: Value) -> Result<Value> {
         let action = super::action(name).ok_or(Error::Invalid)?;
+        let window = web_sys::window().ok_or(Error::Unavailable)?;
         let headers = web_sys::Headers::new().map_err(|_| Error::Invalid)?;
         headers
             .set("content-type", "application/json")
@@ -42,30 +43,54 @@ impl BrowserClient {
         let controller = web_sys::AbortController::new().map_err(|_| Error::Unavailable)?;
         let cancellation = CancelOnDrop(controller.clone());
         let timeout = gloo_timers::callback::Timeout::new(30_000, move || controller.abort());
-        let call = gloo_net::http::Request::post(&format!("{}{}", self.base, action.path()))
-            .headers(gloo_net::http::Headers::from_raw(headers))
-            .redirect(web_sys::RequestRedirect::Error)
-            .credentials(web_sys::RequestCredentials::Omit)
-            .cache(web_sys::RequestCache::NoStore)
-            .referrer_policy(web_sys::ReferrerPolicy::NoReferrer)
-            .abort_signal(Some(&cancellation.0.signal()))
-            .body(input.to_string())
-            .map_err(|_| Error::Invalid)?;
-        let response = call.send().await.map_err(|_| Error::Reconcile)?;
+        let options = web_sys::RequestInit::new();
+        options.set_method("POST");
+        options.set_mode(web_sys::RequestMode::Cors);
+        options.set_headers(&headers);
+        options.set_redirect(web_sys::RequestRedirect::Error);
+        options.set_credentials(web_sys::RequestCredentials::Omit);
+        options.set_cache(web_sys::RequestCache::NoStore);
+        options.set_referrer_policy(web_sys::ReferrerPolicy::NoReferrer);
+        options.set_signal(Some(&cancellation.0.signal()));
+        options.set_body(&input.to_string().into());
+        let call = web_sys::Request::new_with_str_and_init(
+            &format!("{}{}", self.base, action.path()),
+            &options,
+        )
+        .map_err(|_| Error::Invalid)?;
+        let response = JsFuture::from(window.fetch_with_request(&call))
+            .await
+            .map_err(|_| Error::Reconcile)?
+            .dyn_into::<web_sys::Response>()
+            .map_err(|_| Error::Reconcile)?;
         let status = response.status();
         const LIMIT: usize = 16 * 1024 * 1024;
         if response
             .headers()
             .get("content-length")
+            .map_err(|_| Error::Reconcile)?
             .is_some_and(|size| size.parse::<u64>().is_ok_and(|size| size > LIMIT as u64))
         {
             return Err(Error::Reconcile);
         }
         let stream = response.body().ok_or(Error::Reconcile)?;
-        let mut stream = wasm_streams::ReadableStream::from_raw(stream).into_stream();
+        let reader = stream
+            .get_reader()
+            .dyn_into::<web_sys::ReadableStreamDefaultReader>()
+            .map_err(|_| Error::Reconcile)?;
         let mut bytes = Vec::new();
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk
+        loop {
+            let next = JsFuture::from(reader.read())
+                .await
+                .map_err(|_| Error::Reconcile)?;
+            let done = js_sys::Reflect::get(&next, &"done".into())
+                .map_err(|_| Error::Reconcile)?
+                .as_bool()
+                .ok_or(Error::Reconcile)?;
+            if done {
+                break;
+            }
+            let chunk = js_sys::Reflect::get(&next, &"value".into())
                 .map_err(|_| Error::Reconcile)?
                 .dyn_into::<js_sys::Uint8Array>()
                 .map_err(|_| Error::Reconcile)?;
@@ -81,7 +106,7 @@ impl BrowserClient {
     }
 }
 
-// Abort Fetch and its body reader if the future is cancelled or a size/error
+// Abort the browser-owned Fetch and body reader if the future is cancelled or a size/error
 // guard exits early. The timer separately bounds the entire response lifetime.
 struct CancelOnDrop(web_sys::AbortController);
 impl Drop for CancelOnDrop {

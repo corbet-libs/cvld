@@ -365,13 +365,17 @@ committed OpenAPI projection verified by CI.
 ### Browser transport
 
 The optional `client-browser` adapter uses the maintained
-[Gloo Fetch wrapper](https://docs.rs/gloo-net/latest/gloo_net/http/struct.RequestBuilder.html)
-and [wasm-streams](https://docs.rs/wasm-streams/latest/wasm_streams/).
+[wasm-bindgen Fetch bindings](https://wasm-bindgen.github.io/wasm-bindgen/examples/fetch.html)
+and the browser's standard Web Streams reader through `web-sys`.
 Browser Fetch supplies TLS, origin/CORS enforcement and streaming; the adapter
 selects the configured origin, disables redirects, ambient credentials, cache and
 referrers, aborts cancelled requests, and bounds the complete reply to30seconds
 and16MiB. It defines no networking protocol or proxy route. Browser network
 configuration remains controlled by the browser environment.
+The adapter requires a browser Window. It implements no HTTP or stream-framing
+primitive; Fetch and the browser own both the request and streaming response.
+Using those maintained bindings directly also avoids coupling the native server
+resolver to the minimum JavaScript versions of optional convenience wrappers.
 
 The explicit redirect mode follows the
 [Fetch standard](https://fetch.spec.whatwg.org/#request-redirect-mode); the

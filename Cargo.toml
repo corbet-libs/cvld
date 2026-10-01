@@ -12,12 +12,11 @@ default = ["server"]
 server = ["client-http", "dep:cmty", "dep:clbs", "dep:ed25519-dalek", "dep:cpsd", "dep:crlt", "dep:csgn", "dep:cglb", "dep:ckyh", "dep:cthl", "dep:axum", "dep:tower-http", "dep:utoipa", "dep:clap", "dep:rmcp", "dep:tokio", "dep:uuid", "dep:chrono", "dep:rand", "dep:subtle"]
 client = ["dep:jsonschema"]
 client-http = ["client", "dep:reqwest", "dep:url"]
-client-browser = ["client", "dep:url", "dep:gloo-net", "dep:gloo-timers", "dep:web-sys", "dep:wasm-streams", "dep:wasm-bindgen", "dep:js-sys", "dep:futures-util"]
+client-browser = ["client", "dep:url", "dep:gloo-timers", "dep:web-sys", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:js-sys"]
 development-gate = ["server", "cglb/development-gate"]
 
 [dependencies]
 url = { version = "2.5", optional = true }
-futures-util = { version = "0.3", optional = true }
 jsonschema = { version = "0.58", default-features = false, optional = true }
 cmty = { git = "https://github.com/corbet-libs/cmty", branch = "main", optional = true }
 clbs = { git = "https://github.com/corbet-foss/clbs", branch = "main", optional = true }
@@ -50,11 +49,10 @@ path = "src/main.rs"
 required-features = ["server"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-gloo-net = { version = "0.7", default-features = false, features = ["http", "json"], optional = true }
 gloo-timers = { version = "0.3", optional = true }
-web-sys = { version = "0.3", features = ["AbortController", "AbortSignal", "Headers", "RequestRedirect", "RequestCredentials", "RequestCache", "ReferrerPolicy"], optional = true }
-wasm-streams = { version = "0.5", optional = true }
+web-sys = { version = "0.3", features = ["AbortController", "AbortSignal", "Headers", "Request", "RequestInit", "RequestMode", "Response", "Window", "ReadableStream", "ReadableStreamDefaultReader", "RequestRedirect", "RequestCredentials", "RequestCache", "ReferrerPolicy"], optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
 js-sys = { version = "0.3", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
