@@ -13,10 +13,14 @@ pub use http::HttpClient;
 
 static DOCUMENT: LazyLock<Value> = LazyLock::new(|| {
     #[cfg(feature = "server")]
-    let source = crate::api::openapi_json();
+    {
+        serde_json::to_value(crate::api::openapi()).expect("the owner contract is serializable")
+    }
     #[cfg(not(feature = "server"))]
-    let source = include_str!("../docs/openapi.json");
-    serde_json::from_str(&source).expect("the checked generated door contract is JSON")
+    {
+        serde_json::from_str(include_str!("../docs/openapi.json"))
+            .expect("the checked generated door contract is JSON")
+    }
 });
 
 static RESPONSES: LazyLock<Result<BTreeMap<String, jsonschema::Validator>>> =
