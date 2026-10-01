@@ -2,7 +2,7 @@
 #[cfg(owned_browser_coverage)]
 use browser_coverage_runtime as _;
 use cvld::{
-    client::{BrowserClient, Client, Transport},
+    client::{BrowserClient, Client, Transport, action, contract, validate_response},
     error::Error,
 };
 use serde_json::json;
@@ -23,7 +23,15 @@ async fn generated_browser_client_reaches_the_real_keyhole_and_door() {
         .unwrap();
     let session = fixture["session"].as_str().unwrap().to_owned();
     let mut public = Client::new(BrowserClient::new(BASE.into(), HOST.into(), None).unwrap());
+    let metadata = action("global_public").unwrap();
+    assert_eq!(metadata.path(), "/v1/global_public");
+    assert_eq!(metadata.schema()["x-role"], "public");
+    assert_eq!(contract()["info"]["title"], "cvld");
     assert!(public.call("global_public", json!({})).await.unwrap()["issuer"].is_array());
+    assert!(matches!(
+        validate_response("unknown", &json!({})),
+        Err(Error::Invalid)
+    ));
     assert!(matches!(
         public.call("passport_challenge", json!({})).await,
         Err(Error::Unauthorized)
@@ -98,6 +106,7 @@ fn browser_origin_is_exact_and_cannot_use_the_native_fixture_host_override() {
         "ftp://localhost",
         "http://remote.example.test",
         "https://user@wallet.example.test",
+        "https://:password@wallet.example.test",
         "https://wallet.example.test/path",
         "https://wallet.example.test/?q=x",
         "https://wallet.example.test/#fragment",
@@ -115,5 +124,7 @@ fn browser_origin_is_exact_and_cannot_use_the_native_fixture_host_override() {
         BrowserClient::new("http://localhost".into(), HOST.into(), None),
         Err(Error::WrongHost)
     ));
-    assert!(BrowserClient::new("http://localhost".into(), "localhost".into(), None).is_ok());
+    for host in ["localhost", "127.0.0.1", "[::1]"] {
+        assert!(BrowserClient::new(format!("http://{host}"), host.into(), None).is_ok());
+    }
 }
