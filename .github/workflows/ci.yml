@@ -15,10 +15,15 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: dtolnay/rust-toolchain@stable
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: 22
     - name: Check the committed dependency graph before refresh
       run: python3 .github/check-first-party.py
     - name: Resolve one fresh dependency snapshot
       run: 'cargo update
+
+        npm update --prefix clients/ts --package-lock-only --ignore-scripts
 
         rustc --version > resolver.txt
 
@@ -26,11 +31,17 @@ jobs:
 
         date -u +%FT%TZ >> resolver.txt
 
-        sha256sum Cargo.lock >> resolver.txt'
+        node --version >> resolver.txt
+
+        npm --version >> resolver.txt
+
+        sha256sum Cargo.lock clients/ts/package-lock.json >> resolver.txt'
     - uses: actions/upload-artifact@v7
       with:
         name: resolved-lock
         path: 'Cargo.lock
+
+          clients/ts/package-lock.json
 
           resolver.txt'
         retention-days: 7
@@ -132,6 +143,8 @@ jobs:
       with:
         name: generated
         path: 'Cargo.lock
+
+          clients/ts/package-lock.json
 
           docs/openapi.json
 
