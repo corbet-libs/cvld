@@ -6,4 +6,5 @@
 *.db-wal
 
 /browser-fixture.json
+/browser-fixture.json.pending
 /.browser-tls/

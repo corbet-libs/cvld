@@ -104,12 +104,19 @@ async fn main() {
     let faults = format!("http://{}", listener.local_addr().unwrap());
     let task = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
     let data = json!({ "upstream": service.base, "faults": faults, "session": member.session, "fault_sessions": sessions });
-    std::fs::write(&path, serde_json::to_vec(&data).unwrap()).unwrap();
+    let temporary = format!("{path}.pending");
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
     }
+    let mut file = options.open(&temporary).unwrap();
+    serde_json::to_writer(&mut file, &data).unwrap();
+    drop(file);
+    // The runner sees only the complete private fixture, never a partial write.
+    std::fs::rename(&temporary, &path).unwrap();
     tokio::signal::ctrl_c().await.unwrap();
     task.abort();
 }
