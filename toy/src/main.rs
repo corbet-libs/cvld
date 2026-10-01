@@ -452,7 +452,7 @@ impl World {
                 if voucher {
                     requirements.push(json!({"gate":"cvch","level":"community","provider":null}));
                 }
-                let policy = cmnt::cplc::crbk::ActionPolicy {
+                let policy = cmty::cplc::crbk::ActionPolicy {
                     all_of: serde_json::from_value(json!(requirements))
                         .map_err(|_| "policy requirements")?,
                     ..Default::default()
@@ -460,7 +460,7 @@ impl World {
                 let (cli, session) = self.admin(community)?;
                 self.advance(1);
                 let after: TrustFeed = decode(cli.call(Some(&session),"setting_set",json!({
-                    "key":cmnt::cplc::crbk::action_key(cmnt::ADMISSION_ACTION),"value":policy,"inherit":false,"effective_at":self.now
+                    "key":cmty::cplc::crbk::action_key(cmty::ADMISSION_ACTION),"value":policy,"inherit":false,"effective_at":self.now
                 }))?)?;
                 require(
                     after.policy_epoch > before.policy_epoch

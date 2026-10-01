@@ -4,7 +4,7 @@ use crate::{
     error::{Error, Result},
     service::{Context, Door},
 };
-use cmnt::{cplc, cplc::crbk};
+use cmty::{cplc, cplc::crbk};
 
 impl Door {
     pub(crate) async fn presentation_challenge(

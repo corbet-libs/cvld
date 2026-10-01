@@ -12,7 +12,7 @@ default = []
 development-gate = ["cglb/development-gate"]
 
 [dependencies]
-cmnt = { git = "https://github.com/corbet-libs/cmnt", rev = "eea1a8083ce137607cc03f28c348c73345a6a06f" }
+cmty = { git = "https://github.com/corbet-libs/cmty", rev = "8998171ccf1f169d4ac13506af97c95f65cc71dd" }
 clbs = { git = "https://github.com/corbet-foss/clbs", rev = "873f2dd7388c6d5e025a27b4c55447c4b4892a2d" }
 ed25519-dalek = "2.2"
 cpsd = { git = "https://github.com/corbet-foss/cpsd", rev = "0d314b97bce9aeaffb5424159e8255ce34acee1e", default-features = false, features = ["storage"] }

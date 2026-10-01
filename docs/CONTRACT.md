@@ -3,7 +3,7 @@
 One FSL-1.1-ALv2 Rust package, library and binary. No registry publishing.
 The previous JavaScript tree is preserved by the annotated
 `js-prototype-0.1.0-alpha.0` tag. Domain state and decisions belong to cglb and
-cmnt; storage and cryptography remain in their leaves.
+cmty; storage and cryptography remain in their leaves.
 
 ## Actions and transports
 
@@ -95,7 +95,7 @@ A community presentation challenge is single-use, server-held and short-lived.
 The response carries cplc's signed cpsd request. A holder must authenticate the
 intended community's origin/key ring before producing a presentation. First
 registration consumes the presentation and binds a random community-local UUID
-to its verified pseudonym through cmnt. Registration never grants admission.
+to its verified pseudonym through cmty. Registration never grants admission.
 A fresh presentation is needed for credential issuance; proof bytes and global
 gate disclosures are not persisted. Different communities receive different
 pseudonyms, relying on cpsd's BBS/SyRA construction.
@@ -106,11 +106,11 @@ creates no visit record and does not lapse a member merely because a fresh
 passport was not supplied to this read. Voucher verification and atomic
 single-use storage belong to cgts/cvch. Handles use cmbr's cgrd/crgs operations.
 Withdrawing a gate supplies a fresh passport and immediately reevaluates
-admission through cmnt; an absent required gate lapses the member.
+admission through cmty; an absent required gate lapses the member.
 Pins contain only a context-bound v2 digest; schema values and salts stay on
 devices. A changed digest needs the owning facade's spent-token capability.
 
-cmnt owns admission, gate decisions and credential issuance through the three
+cmty owns admission, gate decisions and credential issuance through the three
 facades. cplc reads authoritative membership facts from cmbr and holds its member
 guard until signing completes. Probation and coarse leases come from membership;
 request bodies cannot select established standing or a credential expiry.
@@ -191,7 +191,7 @@ No production route, CLI command, MCP tool or OpenAPI path contains it.
 Community admission re-verifies the configured public global status on every
 presentation start, first registration and credential attempt. The door retains
 public epoch/revision floors in its community database; expired or rolled-back
-metadata is refused, including after restart. cmnt atomically refreshes policy
+metadata is refused, including after restart. cmty atomically refreshes policy
 and its freshness deadline; changed metadata invalidates old challenges. Local
 cleanup continues when global metadata expires. Issuer-key changes require an
 explicit service restart; no global secret or account data enters this path.
@@ -230,7 +230,7 @@ do not change its bytes. Public epoch updates still announce policy/revocation
 changes; shared-machine CPU and network timing are not an anonymity guarantee.
 All HTTP successes, failures and fallbacks carry `Cache-Control: no-store`.
 
-Initial seals are refused for Free fields. cmnt omits a formerly restricted
+Initial seals are refused for Free fields. cmty omits a formerly restricted
 field's stored seal while that field is Free, permitting renewal after loosening.
 
 The TypeScript and Rust clients accept HTTPS service origins and explicit HTTP

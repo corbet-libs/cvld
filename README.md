@@ -4,7 +4,7 @@ The permanent door of the cmtymeet trust stack. One Rust library and binary,
 FSL-1.1-ALv2. The JavaScript/AnonCreds prototype is preserved at annotated tag
 `js-prototype-0.1.0-alpha.0`. This package is not published to any registry.
 
-The door composes the global `cglb` and community `cmnt` facades. Separate
+The door composes the global `cglb` and community `cmty` facades. Separate
 processes and databases preserve their information boundary. The API registry
 owns actions, roles and check/record classification; HTTP, OpenAPI, MCP and CLI
 are projections of that registry.
@@ -22,7 +22,7 @@ Surveyed crates.io, official documentation and GitHub on 2026-09-30:
 | [clap](https://github.com/clap-rs/clap) 4.6 | Build subcommands directly from action metadata. |
 | [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) 7.13 | Generate the TypeScript interface from the emitted OpenAPI. |
 | [cglb](https://github.com/corbet-libs/cglb) | Own global uniqueness, gate execution, suspension and blind issuance. |
-| [cmnt](https://github.com/corbet-libs/cmnt) | Compose membership, gates and policy without copying their domain logic. |
+| [cmty](https://github.com/corbet-libs/cmty) | Compose membership, gates and policy without copying their domain logic. |
 | [ed25519-dalek](https://github.com/dalek-cryptography/curve25519-dalek) 2.2 | Parse the configured public sponsor key for cgts; signing and verification stay in the facades and leaves. |
 | [cpky](https://github.com/corbet-foss/cpky) | UV-required wallet/operator WebAuthn; no new passkey implementation. |
 | [subtle](https://docs.rs/subtle/latest/subtle/trait.ConstantTimeEq.html) 2.6 | Compare bootstrap capability contents without ordinary string-comparison timing; already shared by cryptographic dependencies. |

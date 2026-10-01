@@ -1110,9 +1110,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmnt"
+name = "cmty"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cmnt?rev=eea1a8083ce137607cc03f28c348c73345a6a06f#eea1a8083ce137607cc03f28c348c73345a6a06f"
+source = "git+https://github.com/corbet-libs/cmty?rev=8998171ccf1f169d4ac13506af97c95f65cc71dd#8998171ccf1f169d4ac13506af97c95f65cc71dd"
 dependencies = [
  "cgts",
  "chrono",
@@ -1673,7 +1673,7 @@ dependencies = [
  "chrono",
  "clap",
  "clbs",
- "cmnt",
+ "cmty",
  "cpky",
  "cpns",
  "cpsd",
