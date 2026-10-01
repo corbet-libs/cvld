@@ -30,6 +30,11 @@ pub fn corrupted_response(mode: usize) -> Response {
             vec![b' '; 17 * 1024 * 1024],
         )]))),
         8 => Response::new(Body::from("{\"unexpected\":true}")),
-        _ => Response::new(Body::from("{\"issuer\":[]}")),
+        9 => Response::new(Body::from("{\"issuer\":[]}")),
+        10 => Response::new(Body::from_stream(futures_util::stream::once(async {
+            tokio::time::sleep(std::time::Duration::from_secs(31)).await;
+            Ok::<_, std::io::Error>(axum::body::Bytes::from_static(b"{}"))
+        }))),
+        _ => panic!("unknown wire-corruption vector"),
     }
 }

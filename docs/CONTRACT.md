@@ -381,3 +381,6 @@ require `Reconcile`, one dispatch per mutation and independent session invalidat
 for malformed JSON/schema, mismatched error status, redirect, oversized length,
 truncated stream and streaming body overflow. This is a test-only intermediary;
 it does not replace server authentication or lifecycle logic.
+An additional browser vector holds the reply open after the real commit until
+the production 30-second deadline aborts it, then verifies the session is gone
+and only one mutation was sent. The test does not shorten the adapter's deadline.

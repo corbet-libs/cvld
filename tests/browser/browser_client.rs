@@ -88,7 +88,7 @@ async fn generated_browser_client_reaches_the_real_keyhole_and_door() {
         .json()
         .await
         .unwrap();
-    assert_eq!(counts, vec![1; 10]);
+    assert_eq!(counts, vec![1; 11]);
 }
 
 #[wasm_bindgen_test]

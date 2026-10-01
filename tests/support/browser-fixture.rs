@@ -25,7 +25,7 @@ async fn main() {
         .await
         .unwrap();
     let mut sessions = Vec::new();
-    for _ in 0..10 {
+    for _ in 0..11 {
         sessions.push(
             login(
                 &service,
