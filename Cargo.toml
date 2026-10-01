@@ -14,7 +14,7 @@ development-gate = ["cglb/development-gate"]
 [dependencies]
 cmty = { git = "https://github.com/corbet-libs/cmty", branch = "main" }
 clbs = { git = "https://github.com/corbet-foss/clbs", branch = "main" }
-ed25519-dalek = "2.2"
+ed25519-dalek = "3.0"
 cpsd = { git = "https://github.com/corbet-foss/cpsd", branch = "main", default-features = false, features = ["storage"] }
 crlt = { git = "https://github.com/corbet-foss/crlt", branch = "main" }
 csgn = { git = "https://github.com/corbet-foss/csgn", branch = "main", features = ["libsql"] }
@@ -22,7 +22,7 @@ cglb = { git = "https://github.com/corbet-libs/cglb", branch = "main" }
 ckyh = { git = "https://github.com/corbet-foss/ckyh", branch = "main" }
 cthl = { git = "https://github.com/corbet-foss/cthl", branch = "main" }
 axum = "0.8.9"
-tower-http = { version = "0.6.11", features = ["cors"] }
+tower-http = { version = "0.7.1", features = ["cors"] }
 utoipa = "6.0.0"
 clap = { version = "4.6.7", features = ["derive", "env", "string"] }
 rmcp = { version = "3.5.0", features = ["server", "client", "transport-io", "transport-child-process"] }
@@ -32,13 +32,13 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = "0.4"
-rand = "0.8"
+rand = "0.10"
 thiserror = "2"
 zeroize = "1.9"
 subtle = "2.6"
 
 [dev-dependencies]
-passkey = "0.4"
+passkey = "0.5"
 async-trait = "0.1"
 cvch = { git = "https://github.com/corbet-foss/cvch", branch = "main" }
 cpns = { git = "https://github.com/corbet-foss/cpns", branch = "main" }
