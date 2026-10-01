@@ -50,7 +50,10 @@ async fn additional_device_is_session_bound_and_survives_original_revocation() {
     let public_client = client(&service, host, None);
     let initial_feed = public_client.call("trust_feed", json!({})).await.unwrap();
     let mut first = enrol_community(&service, host, &passport).await;
-    assert_eq!(public_client.call("trust_feed", json!({})).await.unwrap(), initial_feed);
+    assert_eq!(
+        public_client.call("trust_feed", json!({})).await.unwrap(),
+        initial_feed
+    );
     let first_client = client(&service, host, Some(&first.session));
     first_client
         .call("handle_reserve", json!({"handle":"member_one"}))
@@ -203,7 +206,10 @@ async fn additional_device_is_session_bound_and_survives_original_revocation() {
         .call("device_authorize", json!({"key":second.signing_key}))
         .await
         .unwrap();
-    assert_eq!(public_client.call("trust_feed", json!({})).await.unwrap(), initial_feed);
+    assert_eq!(
+        public_client.call("trust_feed", json!({})).await.unwrap(),
+        initial_feed
+    );
 
     let (pending, options) = begin(&service, host, &first.session).await;
     let pending_response = register(&mut SoftToken::new(true).unwrap().0, host, options);
