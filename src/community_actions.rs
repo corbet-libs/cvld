@@ -280,12 +280,15 @@ impl Door {
             .authorize_device_key(auth, request.key)
             .await
             .map_err(|_| Error::Refused)?;
-        community
+        if community
             .facade
             .flush_revocations(ctx.now)
             .await
-            .map_err(|_| Error::Unavailable)?;
-        community.refresh(ctx.now).await?;
+            .map_err(|_| Error::Unavailable)?
+            > 0
+        {
+            community.refresh(ctx.now).await?;
+        }
         let keys = community
             .facade
             .membership()
