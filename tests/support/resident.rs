@@ -46,6 +46,12 @@ impl Resident {
             .as_object_mut()
             .unwrap()
             .remove("prf");
+        if original["publicKey"].get("extensions").is_none() {
+            preserved["publicKey"]
+                .as_object_mut()
+                .unwrap()
+                .remove("extensions");
+        }
         assert_eq!(preserved, original);
         let mut authenticator =
             Authenticator::new(Aaguid::new_empty(), self.credential.take(), User)
