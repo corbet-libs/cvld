@@ -63,6 +63,32 @@ async fn generated_browser_client_reaches_the_real_keyhole_and_door() {
         malformed.call("global_public", json!({})).await,
         Err(Error::Invalid)
     ));
+    for session in fixture["fault_sessions"].as_array().unwrap() {
+        let owner = BrowserClient::new(
+            BASE.into(),
+            HOST.into(),
+            Some(session.as_str().unwrap().into()),
+        )
+        .unwrap();
+        assert!(matches!(
+            owner.call("logout", json!({})).await,
+            Err(Error::Reconcile)
+        ));
+        // The original mutation committed, despite a malformed, redirected,
+        // oversized or interrupted reply. No replacement operation is sent.
+        assert!(matches!(
+            owner.call("passport_challenge", json!({})).await,
+            Err(Error::Unauthorized)
+        ));
+    }
+    let counts: Vec<usize> = gloo_net::http::Request::get("/__faults")
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    assert_eq!(counts, vec![1; 10]);
 }
 
 #[wasm_bindgen_test]

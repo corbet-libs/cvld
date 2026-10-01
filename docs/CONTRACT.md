@@ -374,3 +374,10 @@ does not expose this control. Native and browser transports share the exact
 owner response-schema validator and uncertain-outcome classification. A native
 compile or client-only lint is not evidence of browser execution; real browser
 round trips and their coverage remain required before acceptance.
+
+The actual browser fixture reuses the native client's ten response-corruption
+cases after the original door has committed a real logout. Browser vectors
+require `Reconcile`, one dispatch per mutation and independent session invalidation
+for malformed JSON/schema, mismatched error status, redirect, oversized length,
+truncated stream and streaming body overflow. This is a test-only intermediary;
+it does not replace server authentication or lifecycle logic.

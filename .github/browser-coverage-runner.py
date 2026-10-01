@@ -52,6 +52,8 @@ def main():
         fixture = json.loads(fixture_path.read_text())
         if not re.fullmatch(r"http://127\.0\.0\.1:[0-9]+", fixture["upstream"]):
             raise RuntimeError("fixture must use an actual loopback door")
+        if not re.fullmatch(r"http://127\.0\.0\.1:[0-9]+", fixture["faults"]):
+            raise RuntimeError("fault proxy must use loopback")
         tls = Path(".browser-tls").resolve()
         certificate, key = tls / "cert.pem", tls / "key.pem"
         config = tls / "Caddyfile"
@@ -62,6 +64,12 @@ def main():
 https://wallet.example.test {
     bind 127.0.0.1
     tls CERT KEY
+    handle /v1/logout {
+        reverse_proxy FAULTS
+    }
+    handle /__faults {
+        reverse_proxy FAULTS
+    }
     handle /v1/* {
         reverse_proxy UPSTREAM
     }
@@ -76,6 +84,7 @@ https://wallet.example.test {
 }
 """.replace("CERT", str(certificate)).replace("KEY", str(key))
             .replace("UPSTREAM", fixture["upstream"])
+            .replace("FAULTS", fixture["faults"])
             .replace("FIXTURE_ROOT", str(fixture_path.parent)).replace("TEST_RUNNER", address))
         proxy = subprocess.Popen(["caddy", "run", "--config", str(config)],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
