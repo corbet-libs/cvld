@@ -354,3 +354,23 @@ that is valid JSON but has the wrong DTO shape remains an uncertain post-dispatc
 outcome (`Reconcile`); clients never retry a record operation automatically. The
 server build consumes its live registry; portable device builds consume the exact
 committed OpenAPI projection verified by CI.
+
+
+### Browser transport
+
+The optional `client-browser` adapter uses the maintained
+[Gloo Fetch wrapper](https://docs.rs/gloo-net/latest/gloo_net/http/struct.RequestBuilder.html)
+and [wasm-streams](https://docs.rs/wasm-streams/latest/wasm_streams/).
+Browser Fetch supplies TLS, origin/CORS enforcement and streaming; the adapter
+selects the configured origin, disables redirects, ambient credentials, cache and
+referrers, aborts cancelled requests, and bounds the complete reply to30seconds
+and16MiB. It defines no networking protocol or proxy route. Browser network
+configuration remains controlled by the browser environment.
+
+The explicit redirect mode follows the
+[Fetch standard](https://fetch.spec.whatwg.org/#request-redirect-mode); the
+[reqwest Wasm builder](https://docs.rs/reqwest/latest/wasm32-unknown-unknown/reqwest/struct.RequestBuilder.html)
+does not expose this control. Native and browser transports share the exact
+owner response-schema validator and uncertain-outcome classification. A native
+compile or client-only lint is not evidence of browser execution; real browser
+round trips and their coverage remain required before acceptance.
