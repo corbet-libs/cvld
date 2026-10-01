@@ -228,6 +228,30 @@
           "effective_at"
         ],
         "type": "object"
+      },
+      "TrustKeyTransition": {
+        "additionalProperties": false,
+        "description": "Original publishing-key endorsement; routing metadata is not authority.",
+        "properties": {
+          "proof": {
+            "items": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "revision": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "proof"
+        ],
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -2167,6 +2191,12 @@
                       },
                       "type": "array"
                     },
+                    "key_transitions": {
+                      "items": {
+                        "$ref": "#/components/schemas/TrustKeyTransition"
+                      },
+                      "type": "array"
+                    },
                     "manifest": {
                       "items": {
                         "format": "int32",
@@ -2613,6 +2643,12 @@
                       },
                       "type": "array"
                     },
+                    "key_transitions": {
+                      "items": {
+                        "$ref": "#/components/schemas/TrustKeyTransition"
+                      },
+                      "type": "array"
+                    },
                     "manifest": {
                       "items": {
                         "format": "int32",
@@ -2768,6 +2804,12 @@
                         "format": "int32",
                         "minimum": 0,
                         "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "key_transitions": {
+                      "items": {
+                        "$ref": "#/components/schemas/TrustKeyTransition"
                       },
                       "type": "array"
                     },
@@ -2987,6 +3029,12 @@
                         "format": "int32",
                         "minimum": 0,
                         "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "key_transitions": {
+                      "items": {
+                        "$ref": "#/components/schemas/TrustKeyTransition"
                       },
                       "type": "array"
                     },

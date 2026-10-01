@@ -588,6 +588,12 @@ export interface components {
             /** @description Explicit null is a value. Set inherit to remove this layer's row. */
             value: unknown;
         };
+        /** @description Original publishing-key endorsement; routing metadata is not authority. */
+        TrustKeyTransition: {
+            proof: number[];
+            /** Format: int64 */
+            revision: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1526,6 +1532,7 @@ export interface operations {
                     "application/json": {
                         communities: number[];
                         key_ring: number[];
+                        key_transitions?: components["schemas"]["TrustKeyTransition"][];
                         manifest: number[];
                         /** Format: int64 */
                         policy_epoch: number;
@@ -1737,6 +1744,7 @@ export interface operations {
                     "application/json": {
                         communities: number[];
                         key_ring: number[];
+                        key_transitions?: components["schemas"]["TrustKeyTransition"][];
                         manifest: number[];
                         /** Format: int64 */
                         policy_epoch: number;
@@ -1791,6 +1799,7 @@ export interface operations {
                     "application/json": {
                         communities: number[];
                         key_ring: number[];
+                        key_transitions?: components["schemas"]["TrustKeyTransition"][];
                         manifest: number[];
                         /** Format: int64 */
                         policy_epoch: number;
@@ -1882,6 +1891,7 @@ export interface operations {
                     "application/json": {
                         communities: number[];
                         key_ring: number[];
+                        key_transitions?: components["schemas"]["TrustKeyTransition"][];
                         manifest: number[];
                         /** Format: int64 */
                         policy_epoch: number;
