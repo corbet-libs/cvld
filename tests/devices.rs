@@ -174,14 +174,25 @@ async fn additional_device_is_session_bound_and_survives_original_revocation() {
         user,
         credential,
         session,
+        signing_key: ed25519_dalek::SigningKey::from_bytes(&[14; 32]).verifying_key().to_bytes(),
     };
     let second_client = client(&service, host, Some(&second.session));
+    // WebAuthn registration alone has not authorized the second signing key.
+    let keys: DeviceKeys = serde_json::from_value(second_client.call("device_keys", json!({})).await.unwrap()).unwrap();
+    assert_eq!(keys.keys, vec![first.signing_key]);
+    let proof = presentation(&service, host, Some(&second.session), &passport).await;
+    assert_eq!(call_status(&service, host, Some(&second.session), "credential_issue",
+        json!({"presentation":proof,"devices":[second.signing_key]})).await, 409);
+    second_client.call("device_authorize", json!({"key":second.signing_key})).await.unwrap();
+
     let (pending, options) = begin(&service, host, &first.session).await;
     let pending_response = register(&mut SoftToken::new(true).unwrap().0, host, options);
     second_client
         .call("passkey_revoke", json!({"credential":first.credential}))
         .await
         .unwrap();
+    let current: DeviceKeys = serde_json::from_value(second_client.call("device_keys", json!({})).await.unwrap()).unwrap();
+    assert_eq!(current.keys, vec![second.signing_key]);
     for session in [&first.session, &alternate_session] {
         assert_eq!(
             call_status(&service, host, Some(session), "lobby", json!({})).await,

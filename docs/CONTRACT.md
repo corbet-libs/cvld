@@ -76,6 +76,23 @@ only if both TURSO_URL and TURSO_TOKEN are nonempty; use a disposable database.
 
 ## Community process
 
+`device_authorize` binds one actual lineage device signing key to the exact
+currently authenticated live passkey through cmbr. Repeating the same binding
+is idempotent; replacing it with another raw public key is refused. Registration
+alone and `credential_issue.devices` do not establish this authority. The door
+drains the durable revocation outbox and republishes the trust feed after a new
+binding. `device_keys` returns only bindings whose passkeys remain live.
+
+cplc obtains those keys independently through cmbr's held membership lease and
+refuses any unbound or removed requested key before signing. Revoking a passkey
+invalidates its sessions and removes its key from that current set immediately.
+This is the server G3 boundary; the device pairing adapter must additionally
+verify the current ckmg root, epoch, exact transition and user confirmation.
+
+The new device-key table is appended after the existing complete migration
+history. Historical passkey table names and migration sequence numbers remain
+unchanged by the server crate rename.
+
 `cvld serve community --config <file>` owns one database for one canonical
 community and its own durable csgn signer. The immutable database identity
 prevents assigning the same file to another community. There is no global
