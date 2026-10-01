@@ -835,7 +835,7 @@ dependencies = [
 [[package]]
 name = "cblc"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cblc?branch=main#f54dcc9d176ebf37092be7862ea05dffd821489a"
+source = "git+https://github.com/corbet-libs/cblc?branch=main#7d66c7d5b469fac506f40d6917f9d9876a6c497b"
 dependencies = [
  "cpns",
  "crlt",
@@ -887,8 +887,9 @@ checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
 [[package]]
 name = "cglb"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cglb?branch=main#d4b29830da09d62c3d8adfe422a2092622f8f7ef"
+source = "git+https://github.com/corbet-libs/cglb?branch=main#840c42ace7a99c5a4d898698c9051e8bea965c43"
 dependencies = [
+ "cbcn",
  "cpsd",
  "crlt",
  "csgn",
@@ -903,7 +904,7 @@ dependencies = [
 [[package]]
 name = "cgrd"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cgrd?branch=main#540db6bb67af34d4eae99fc3d05c3d3af1943ed8"
+source = "git+https://github.com/corbet-foss/cgrd?branch=main#efbc07feea484d1a69ed5a46b27cfefe39c4c551"
 dependencies = [
  "bigdecimal",
  "cpns",
@@ -1081,7 +1082,7 @@ version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9c751b79415d4e559e3d1fcf128e09e720eb673a06d26cf6f392d37d75b66e0"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 3.0.6",
@@ -1116,7 +1117,7 @@ dependencies = [
 [[package]]
 name = "cmbr"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cmbr?branch=main#18304eb0cc9f38771abc6d23a3b3c0ef34f1e503"
+source = "git+https://github.com/corbet-libs/cmbr?branch=main#cddf7e2fe28c4a2d50d4d2a3ccb2e3b3c49d4eea"
 dependencies = [
  "cgrd",
  "cgts",
@@ -1145,7 +1146,7 @@ checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 [[package]]
 name = "cmty"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cmty?branch=main#3da33ed2ed440f0c1d3708285a556272e9896c5c"
+source = "git+https://github.com/corbet-libs/cmty?branch=main#002a1f842f28a2a10d93e3bab27bcf805ab48a02"
 dependencies = [
  "cgts",
  "chrono",
@@ -1271,16 +1272,6 @@ dependencies = [
 
 [[package]]
 name = "coset"
-version = "0.3.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4c8cc80f631f8307b887faca24dcc3abc427cd0367f6eb6188f6e8f5b7ad8fb"
-dependencies = [
- "ciborium",
- "ciborium-io",
-]
-
-[[package]]
-name = "coset"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1eb98d5e9155e2cf7cd942c8b3033097d4563b6fb0a00b9caecb74669555c058"
@@ -1292,7 +1283,7 @@ dependencies = [
 [[package]]
 name = "cplc"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cplc?branch=main#52552fea6209838481d2576384a28888d02ba10c"
+source = "git+https://github.com/corbet-libs/cplc?branch=main#94e6c114e432d1670ac43b627356729334aa53d2"
 dependencies = [
  "cbcn",
  "cgts",
@@ -1309,7 +1300,7 @@ dependencies = [
 [[package]]
 name = "cpns"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cpns?branch=main#85674ab2e70f11051ba30ab44a8c7d3301ac6ec1"
+source = "git+https://github.com/corbet-foss/cpns?branch=main#bc9a2d53797b864ee58ae36e331336193ce14aa8"
 dependencies = [
  "crlt",
  "getrandom 0.4.3",
@@ -1575,7 +1566,7 @@ version = "0.0.0"
 source = "git+https://github.com/corbet-foss/csgn?branch=main#eac891b771152b17aa3a903edfe9c129e43a371e"
 dependencies = [
  "ciborium-ll",
- "coset 0.4.2",
+ "coset",
  "crlt",
  "ed25519-dalek 3.0.0",
  "rand_core 0.10.1",
@@ -1598,7 +1589,7 @@ dependencies = [
 [[package]]
 name = "cssr"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cssr?branch=main#a681cb0c84c25119d83ce9fc0194a115f2a17f59"
+source = "git+https://github.com/corbet-foss/cssr?branch=main#5ca86e4624a56e43e9df7dbc169bcca967b8f817"
 dependencies = [
  "crlt",
  "p256",
@@ -1681,7 +1672,7 @@ dependencies = [
 [[package]]
 name = "cvfy"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cvfy?branch=main#3445fce1552b534b98871c027b2d3e19cd064386"
+source = "git+https://github.com/corbet-foss/cvfy?branch=main#b5749ac38ea444d963bf0d979523c04839e4ceeb"
 dependencies = [
  "czkp",
  "data-encoding",
@@ -1707,10 +1698,11 @@ dependencies = [
  "csgn",
  "cthl",
  "cvch",
- "ed25519-dalek 2.2.0",
+ "ed25519-dalek 3.0.0",
  "futures-util",
+ "jsonschema",
  "passkey",
- "rand 0.8.8",
+ "rand 0.10.3",
  "reqwest 0.12.28",
  "rmcp",
  "serde",
@@ -1719,7 +1711,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
- "tower-http",
+ "tower-http 0.7.1",
  "utoipa",
  "uuid",
  "webauthn-authenticator-rs",
@@ -1729,7 +1721,7 @@ dependencies = [
 [[package]]
 name = "czkp"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/czkp?branch=main#976435f44c6e387f76387c945bd39c0122f6c650"
+source = "git+https://github.com/corbet-foss/czkp?branch=main#d2e969d3c631c6baf9d4e129b62dda0f10129a0b"
 dependencies = [
  "data-encoding",
  "ed25519-dalek 2.2.0",
@@ -2592,12 +2584,6 @@ dependencies = [
  "equivalent",
  "foldhash",
 ]
-
-[[package]]
-name = "heck"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
 name = "heck"
@@ -3734,9 +3720,9 @@ dependencies = [
 
 [[package]]
 name = "passkey"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec76b83e6102fb2aecc24a1afb5be839d1cc84914df003ab564e17fb634cc727"
+checksum = "e47eb8971740eff7e395beb540a88a0fc302c205b433ff437f2c4759cba0c5ec"
 dependencies = [
  "passkey-authenticator",
  "passkey-client",
@@ -3746,12 +3732,12 @@ dependencies = [
 
 [[package]]
 name = "passkey-authenticator"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9b065ce31354bcf23a333003c77f0d71f00eb95761b3390a069546e078a7a5b"
+checksum = "20bf5800e3f6287580da985fb88e678f37c078d62242cb536941c44d852ab37c"
 dependencies = [
  "async-trait",
- "coset 0.3.8",
+ "coset",
  "log",
  "p256",
  "passkey-types",
@@ -3760,19 +3746,19 @@ dependencies = [
 
 [[package]]
 name = "passkey-client"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5080bfafe23d139ae8be8b907453aee0b8af3ca7cf25d1f8d7bfcf7b079d3412"
+checksum = "1d99509cbbdfe526c617e8265716fba277562a7d771fef047ac9e25686d1c502"
 dependencies = [
  "ciborium",
- "coset 0.3.8",
+ "coset",
  "idna",
+ "itertools 0.14.0",
  "passkey-authenticator",
  "passkey-types",
  "public-suffix",
  "serde",
  "serde_json",
- "typeshare",
  "url",
 ]
 
@@ -3784,13 +3770,13 @@ checksum = "8e04110fadc73577990f04153a2508989242d9c90a645aeaad98ef30e0decfbb"
 
 [[package]]
 name = "passkey-types"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77144664f6aac5f629d7efa815f5098a054beeeca6ccafee5ec453fd2b0c53f9"
+checksum = "c2a1fae06bd6bc619675d30b50cb38ca649837cc9e6a92a00b14743cfbdb1390"
 dependencies = [
  "bitflags 2.13.2",
  "ciborium",
- "coset 0.3.8",
+ "coset",
  "data-encoding",
  "getrandom 0.2.17",
  "hmac 0.12.1",
@@ -3799,8 +3785,8 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "strum 0.25.0",
- "typeshare",
+ "strum 0.27.2",
+ "url",
  "zeroize",
 ]
 
@@ -4481,7 +4467,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tower",
- "tower-http",
+ "tower-http 0.6.11",
  "tower-service",
  "url",
  "wasm-bindgen",
@@ -4517,7 +4503,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tower",
- "tower-http",
+ "tower-http 0.6.11",
  "tower-service",
  "url",
  "wasm-bindgen",
@@ -5358,11 +5344,11 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"
-version = "0.25.0"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
+checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
 dependencies = [
- "strum_macros 0.25.3",
+ "strum_macros 0.27.2",
 ]
 
 [[package]]
@@ -5376,14 +5362,13 @@ dependencies = [
 
 [[package]]
 name = "strum_macros"
-version = "0.25.3"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23dc1fa9ac9c169a78ba62f0b841814b7abae11bdd047b9c58f893439e309ea0"
+checksum = "7695ce3845ea4b33927c055a39dc438a45b059f7c1b3d91d38d10355fb8cbca7"
 dependencies = [
- "heck 0.4.1",
+ "heck",
  "proc-macro2",
  "quote",
- "rustversion",
  "syn 2.0.119",
 ]
 
@@ -5393,7 +5378,7 @@ version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab85eea0270ee17587ed4156089e10b9e6880ee688791d45a905f5b1ca36f664"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -5714,6 +5699,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tower-http"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08a05a66a4fdd61cbbe0a1d755ffe0ca6aba159dd4820936a0ff8a8278245b9c"
+dependencies = [
+ "bitflags 2.13.2",
+ "bytes",
+ "http",
+ "percent-encoding",
+ "pin-project-lite",
+ "tower-layer",
+ "tower-service",
+]
+
+[[package]]
 name = "tower-layer"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5788,28 +5788,6 @@ name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
-
-[[package]]
-name = "typeshare"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da1bf9fe204f358ffea7f8f779b53923a20278b3ab8e8d97962c5e1b3a54edb7"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "typeshare-annotation",
-]
-
-[[package]]
-name = "typeshare-annotation"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "621963e302416b389a1ec177397e9e62de849a78bd8205d428608553def75350"
-dependencies = [
- "quote",
- "syn 2.0.119",
-]
 
 [[package]]
 name = "ucd-parse"

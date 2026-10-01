@@ -18,7 +18,7 @@ development-gate = ["server", "cglb/development-gate"]
 jsonschema = { version = "0.58", default-features = false, optional = true }
 cmty = { git = "https://github.com/corbet-libs/cmty", branch = "main", optional = true }
 clbs = { git = "https://github.com/corbet-foss/clbs", branch = "main", optional = true }
-ed25519-dalek = { version = "2.2", optional = true }
+ed25519-dalek = { version = "3.0", optional = true }
 cpsd = { git = "https://github.com/corbet-foss/cpsd", branch = "main", default-features = false, features = ["storage"], optional = true }
 crlt = { git = "https://github.com/corbet-foss/crlt", branch = "main", optional = true }
 csgn = { git = "https://github.com/corbet-foss/csgn", branch = "main", features = ["libsql"], optional = true }
@@ -26,7 +26,7 @@ cglb = { git = "https://github.com/corbet-libs/cglb", branch = "main", optional 
 ckyh = { git = "https://github.com/corbet-foss/ckyh", branch = "main", optional = true }
 cthl = { git = "https://github.com/corbet-foss/cthl", branch = "main", optional = true }
 axum = { version = "0.8.9", optional = true }
-tower-http = { version = "0.6.11", features = ["cors"], optional = true }
+tower-http = { version = "0.7.1", features = ["cors"], optional = true }
 utoipa = { version = "6.0.0", optional = true }
 clap = { version = "4.6.7", features = ["derive", "env", "string"], optional = true }
 rmcp = { version = "3.5.0", features = ["server", "client", "transport-io", "transport-child-process"], optional = true }
@@ -36,7 +36,7 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"], optional = true }
 uuid = { version = "1", features = ["v4", "serde"], optional = true }
 chrono = { version = "0.4", optional = true }
-rand = { version = "0.8", optional = true }
+rand = { version = "0.10", optional = true }
 thiserror = "2"
 zeroize = "1.9"
 subtle = { version = "2.6", optional = true }
@@ -48,7 +48,7 @@ required-features = ["server"]
 
 [dev-dependencies]
 futures-util = "0.3"
-passkey = "0.4"
+passkey = "0.5"
 async-trait = "0.1"
 cvch = { git = "https://github.com/corbet-foss/cvch", branch = "main" }
 cpns = { git = "https://github.com/corbet-foss/cpns", branch = "main" }
