@@ -1,6 +1,6 @@
 //! Native HTTP adapter for the generated door contract.
 use super::Transport;
-use crate::error::{Error, Result};
+use crate::error::{Error, ErrorBody, Result};
 use serde_json::Value;
 
 #[derive(Clone)]
@@ -31,6 +31,7 @@ impl HttpClient {
         let client = reqwest::Client::builder()
             .user_agent("cvld-client")
             .no_proxy()
+            .retry(reqwest::retry::never())
             .redirect(reqwest::redirect::Policy::none())
             .timeout(std::time::Duration::from_secs(30))
             .build()
@@ -60,30 +61,37 @@ impl HttpClient {
         if let Some(token) = &self.token {
             call = call.bearer_auth(token.as_str());
         }
-        let mut response = call.send().await.map_err(|_| Error::Unavailable)?;
-        if !response.status().is_success() {
-            return Err(match response.status().as_u16() {
-                400 => Error::Invalid,
-                401 => Error::Unauthorized,
-                403 => Error::Forbidden,
-                421 => Error::WrongHost,
-                429 => Error::Throttled,
-                409 => Error::Refused,
-                _ => Error::Unavailable,
-            });
-        }
+        // Builder errors occur before dispatch. Once execute begins, the server
+        // may have committed even if transport, framing or decoding fails.
+        let call = call.build().map_err(|_| Error::Invalid)?;
+        let mut response = self.client.execute(call).await.map_err(|_| Error::Reconcile)?;
+        let status = response.status().as_u16();
         const LIMIT: usize = 16 * 1024 * 1024;
         if response.content_length().is_some_and(|size| size > LIMIT as u64) {
-            return Err(Error::Unavailable);
+            return Err(Error::Reconcile);
         }
         let mut body = Vec::new();
-        while let Some(chunk) = response.chunk().await.map_err(|_| Error::Unavailable)? {
+        while let Some(chunk) = response.chunk().await.map_err(|_| Error::Reconcile)? {
             if chunk.len() > LIMIT - body.len() {
-                return Err(Error::Unavailable);
+                return Err(Error::Reconcile);
             }
             body.extend_from_slice(&chunk);
         }
-        serde_json::from_slice(&body).map_err(|_| Error::Unavailable)
+        if status != 200 {
+            let error: ErrorBody = serde_json::from_slice(&body).map_err(|_| Error::Reconcile)?;
+            return Err(if error.error.http_status() == status {
+                error.error
+            } else {
+                Error::Reconcile
+            });
+        }
+        let value: Value = serde_json::from_slice(&body).map_err(|_| Error::Reconcile)?;
+        // Every registered door response is an object. Exact DTO/schema checks
+        // remain in the generated owner contract and typed lifecycle consumer.
+        if !value.is_object() || value.get("error").is_some() {
+            return Err(Error::Reconcile);
+        }
+        Ok(value)
     }
 }
 

@@ -337,3 +337,11 @@ response bound, and keeps bearer storage in a zeroizing wrapper.
 cfyr consumes this client behind cmsg. Generated operation metadata is never an
 authorization capability; the server still checks the exact current session,
 role and scope. Default generated contracts omit the synthetic development gate.
+
+HTTP mutations are never automatically retried (`reqwest::retry::never`). Once
+request execution may have begun, transport/framing/body/JSON failure produces
+Reconcile. Unexpected HTTP status/error combinations do too. Valid owner error
+bodies retain their exact category. A cancelled in-flight client future also has
+an unknown effect; the embedding lifecycle must reconcile, never blindly repeat.
+The native regression actually commits logout through a real door, then corrupts
+or replaces only its response and checks exactly one dispatch plus revoked session.

@@ -28,3 +28,40 @@ async fn generated_client_forwards_real_public_member_and_root_calls() {
     assert!(matches!(root.call("logout", json!({})).await, Err(Error::Unauthorized)));
     assert!(matches!(HttpClient::new("https://wallet.example.test".into(), "wrong.example.test".into(), None), Err(Error::WrongHost)));
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn committed_logout_with_a_lost_or_malformed_response_is_unknown_and_never_retried() {
+    use axum::{Router, body::Body, response::Response, routing::post};
+    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    let service = global(100).await;
+    let mut root = enrol(&service, ROOT, Some("synthetic-operator-enrolment-capability")).await;
+    for mode in 0..5 {
+        let session = login(&service, ROOT, &mut root.authenticator, &root.user, &root.credential).await;
+        let upstream = client(&service, ROOT, Some(&session));
+        let count = Arc::new(AtomicUsize::new(0));
+        let observed = count.clone();
+        let router = Router::new().route("/v1/logout", post(move || {
+            let upstream = upstream.clone();
+            let observed = observed.clone();
+            async move {
+                observed.fetch_add(1, Ordering::SeqCst);
+                upstream.call("logout", json!({})).await.unwrap();
+                match mode {
+                    0 => Response::new(Body::from("{")),
+                    1 => Response::builder().status(403).body(Body::from("{\"error\":\"unavailable\"}")).unwrap(),
+                    2 => Response::new(Body::from("null")),
+                    3 => Response::builder().status(302).header("location", "/v1/logout").body(Body::empty()).unwrap(),
+                    _ => Response::new(Body::from("{\"error\":\"unauthorized\"}")),
+                }
+            }
+        }));
+        let socket = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", socket.local_addr().unwrap());
+        let task = tokio::spawn(async move { axum::serve(socket, router).await.unwrap() });
+        let proxy = HttpClient::new(base, ROOT.into(), Some(session.clone())).unwrap();
+        assert!(matches!(proxy.call("logout", json!({})).await, Err(Error::Reconcile)));
+        assert_eq!(count.load(Ordering::SeqCst), 1);
+        assert!(matches!(client(&service, ROOT, Some(&session)).call("logout", json!({})).await, Err(Error::Unauthorized)));
+        task.abort();
+    }
+}
