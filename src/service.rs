@@ -69,10 +69,10 @@ pub(crate) struct Context {
     pub grant: Option<Grant>,
     pub token: Option<String>,
     pub now: u64,
-    pub authentication: Option<Arc<cpky::Authentication>>,
+    pub authentication: Option<Arc<ckyh::Authentication>>,
 }
 impl Context {
-    pub fn member(&self) -> Result<&cpky::Authentication> {
+    pub fn member(&self) -> Result<&ckyh::Authentication> {
         self.authentication.as_deref().ok_or(Error::Unauthorized)
     }
 
@@ -129,12 +129,12 @@ impl Door {
                 Some(uuid::Uuid::parse_str(&config.root_user).map_err(|_| Error::Invalid)?),
             ),
         ] {
-            let passkeys = cpky::Passkeys::new(
-                cpky::LibsqlStore::new(&db, scope, tokio::runtime::Handle::current())
+            let passkeys = ckyh::Passkeys::new(
+                ckyh::LibsqlStore::new(&db, scope, tokio::runtime::Handle::current())
                     .map_err(|_| Error::Unavailable)?,
                 scope,
                 &host,
-                &[cpky::Url::parse(&format!("https://{host}")).map_err(|_| Error::Invalid)?],
+                &[ckyh::Url::parse(&format!("https://{host}")).map_err(|_| Error::Invalid)?],
             )
             .map_err(|_| Error::Invalid)?;
             let bootstrap = if operator.is_some() {
@@ -279,12 +279,12 @@ impl Door {
                 &config.root,
             ),
         ] {
-            let passkeys = cpky::Passkeys::new(
-                cpky::LibsqlStore::new(&db, scope, tokio::runtime::Handle::current())
+            let passkeys = ckyh::Passkeys::new(
+                ckyh::LibsqlStore::new(&db, scope, tokio::runtime::Handle::current())
                     .map_err(|_| Error::Unavailable)?,
                 scope,
                 &host,
-                &[cpky::Url::parse(&format!("https://{host}")).map_err(|_| Error::Invalid)?],
+                &[ckyh::Url::parse(&format!("https://{host}")).map_err(|_| Error::Invalid)?],
             )
             .map_err(|_| Error::Invalid)?;
             let bootstrap = operator

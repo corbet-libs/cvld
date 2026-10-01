@@ -20,11 +20,11 @@ fn register(
     token: &mut SoftToken,
     host: &str,
     options: Value,
-) -> cpky::RegisterPublicKeyCredential {
-    let options: cpky::CreationChallengeResponse = serde_json::from_value(options).unwrap();
+) -> ckyh::RegisterPublicKeyCredential {
+    let options: ckyh::CreationChallengeResponse = serde_json::from_value(options).unwrap();
     token
         .perform_register(
-            cpky::Url::parse(&format!("https://{host}")).unwrap(),
+            ckyh::Url::parse(&format!("https://{host}")).unwrap(),
             {
                 // SoftToken is a legacy non-resident fixture.
                 let mut options = options.public_key;

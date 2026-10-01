@@ -26,7 +26,7 @@ or expiring; restarting the process discards them.
 ## Global process
 
 `cvld serve global --config <file>` owns one crlt database, cglb's issuer,
-uniqueness key and durable csgn signer. Wallet authentication uses cpky at
+uniqueness key and durable csgn signer. Wallet authentication uses ckyh at
 `wallet.<domain>`. Root authentication uses a separate RP and namespace at
 `api.root.<domain>`. Hosts match exactly; forwarded-host headers are ignored.
 Only UV-verified passkeys create sessions. Each use rechecks its exact credential
@@ -84,7 +84,7 @@ this backend. Global status and issuer keys arrive only as authenticated public
 configuration. The global API refuses community actions before reading a body;
 community listeners likewise refuse global actions.
 
-Member authentication delegates to cmbr/cpky. The RP is the canonical
+Member authentication delegates to cmbr/ckyh. The RP is the canonical
 `<community>.<domain>` and allowed origins are that site and its member API.
 Admin and root have separate RPs, stored credential namespaces and ephemeral
 sessions. Public API host headers are exact; forwarded headers are ignored.
@@ -251,7 +251,7 @@ The `passkey_add` action has `begin` and `finish` phases in one registry entry,
 shared by HTTP, OpenAPI, CLI, MCP and the generated TypeScript client. It requires
 a live community-member session. The five-minute, single-use ceremony is bound
 to that exact session; replacement, logout, expiry and authorizer revocation
-invalidate it. cpky verifies user verification and atomically checks the old key
+invalidate it. ckyh verifies user verification and atomically checks the old key
 while inserting the new one; cmbr checks membership. The new key uses the same
 community UUID and pseudonym. There is no manual approval or recovery identity.
 
@@ -266,12 +266,12 @@ credential ID is needed or returned. `login_finish` consumes either the
 credential-first or discoverable pending state and returns the same exact-key
 session. Both beginnings share the existing pending-capacity limit, five-minute
 expiry, action quotas and single-use finish. Operator sessions additionally
-require the configured operator UUID after cpky verifies discovery. Community
+require the configured operator UUID after ckyh verifies discovery. Community
 completion still rechecks membership and returns to the lobby; it creates no
 identity, lease extension or login-date record.
 
 The action registry exposes discovery uniformly over HTTP, OpenAPI, CLI, MCP and
-the generated TypeScript client. The door serializes cpky's server-built options
+the generated TypeScript client. The door serializes ckyh's server-built options
 without rebuilding them. Keyhole must preserve those options (including user ID,
 RP, challenge, required UV/residency and lists), adding only its local PRF input.
 It strips the entire `prf` client-extension entry before forwarding any response,
@@ -280,7 +280,7 @@ leave the vault locked even after server sign-in succeeds. Restoring encrypted
 vault records and the browser iframe compatibility spike belong to the device
 libraries; server sign-in does not claim those have completed.
 
-HTTP request types deserialize credentials directly through cpky's guarded
+HTTP request types deserialize credentials directly through ckyh's guarded
 response wrappers. Leaked PRF outputs, under either supported extension alias,
 are rejected with a static invalid-request error, without response-body logging.
 The same guard covers initial and additional registration and both login modes.

@@ -153,7 +153,7 @@ async fn community_restore_from_the_vault_origin_preserves_membership_and_revoca
     let mut device = Resident::default();
     let mut response = device.ceremony(begin.options, true, origin).await;
     strip_prf(&mut response);
-    let credential: cpky::RegisterPublicKeyCredential =
+    let credential: ckyh::RegisterPublicKeyCredential =
         serde_json::from_value(response.clone()).unwrap();
     let credential_id = credential.raw_id.as_ref().to_vec();
     let user: User = serde_json::from_value(

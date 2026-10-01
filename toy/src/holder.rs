@@ -53,7 +53,7 @@ pub fn register(
     )?)?;
     let mut token = Resident::default();
     let (credential, prf) = passkey_ceremony(&mut token, start.options, true, &cli.host);
-    let parsed: cpky::RegisterPublicKeyCredential = decode(credential.clone())?;
+    let parsed: ckyh::RegisterPublicKeyCredential = decode(credential.clone())?;
     let credential_id = parsed.raw_id.as_ref().to_vec();
     let user: User = decode(cli.call(
         None,
@@ -93,7 +93,7 @@ pub fn additional(cli: &Cli, existing: &Member) -> Result<Member> {
     }
     let mut token = Resident::default();
     let (response, prf) = passkey_ceremony(&mut token, options, true, &cli.host);
-    let parsed: cpky::RegisterPublicKeyCredential = decode(response.clone())?;
+    let parsed: ckyh::RegisterPublicKeyCredential = decode(response.clone())?;
     let credential_id = parsed.raw_id.as_ref().to_vec();
     let result: AddedPasskey = decode(cli.call(
         Some(&existing.session),

@@ -79,7 +79,7 @@ pub struct DiscoverableCeremony {
 pub struct RegisterFinish {
     pub ceremony: String,
     #[schema(value_type = std::collections::BTreeMap<String, Value>, additional_properties = true)]
-    pub credential: cpky::RegisterPublicKeyCredential,
+    pub credential: ckyh::RegisterPublicKeyCredential,
 }
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
@@ -103,7 +103,7 @@ pub struct LoginStart {
 pub struct LoginFinish {
     pub ceremony: String,
     #[schema(value_type = std::collections::BTreeMap<String, Value>, additional_properties = true)]
-    pub credential: cpky::PublicKeyCredential,
+    pub credential: ckyh::PublicKeyCredential,
 }
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]

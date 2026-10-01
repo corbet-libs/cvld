@@ -1,9 +1,9 @@
-//! Bounded process-local sessions. Authentication is exclusively cpky.
+//! Bounded process-local sessions. Authentication is exclusively ckyh.
 use crate::{
     api::*,
     error::{Error, Result},
 };
-use cpky::{LibsqlStore, Passkeys, PendingAuthentication, PendingRegistration, Uuid};
+use ckyh::{LibsqlStore, Passkeys, PendingAuthentication, PendingRegistration, Uuid};
 use std::{collections::HashMap, sync::Arc};
 use subtle::ConstantTimeEq;
 
@@ -29,14 +29,14 @@ struct PendingLogin {
 }
 enum LoginCeremony {
     Credential(PendingAuthentication),
-    Discoverable(cpky::PendingDiscoverableAuthentication),
+    Discoverable(ckyh::PendingDiscoverableAuthentication),
 }
 #[derive(Clone)]
 pub struct Grant {
     pub user: Uuid,
     pub role: Role,
     pub expires: u64,
-    pub(crate) credential: cpky::CredentialID,
+    pub(crate) credential: ckyh::CredentialID,
     pub(crate) session_id: [u8; 32],
 }
 /// Random opaque bearer capability, without embedded member information.
@@ -108,7 +108,7 @@ impl Auth {
         let passkeys = self.passkeys.clone();
         let (options, state) = tokio::task::spawn_blocking(move || {
             if !passkeys.list(user)?.is_empty() {
-                return Err(cpky::Error::DuplicateCredential);
+                return Err(ckyh::Error::DuplicateCredential);
             }
             passkeys.start_registration(user)
         })
@@ -138,12 +138,12 @@ impl Auth {
             .ok_or(Error::Unauthorized)?;
         let date = chrono::DateTime::from_timestamp(now as i64, 0).ok_or(Error::Invalid)?;
         use chrono::Datelike;
-        let month = cpky::CreationMonth::new(date.year() as u16, date.month() as u8)
+        let month = ckyh::CreationMonth::new(date.year() as u16, date.month() as u8)
             .map_err(|_| Error::Invalid)?;
         let passkeys = self.passkeys.clone();
         tokio::task::spawn_blocking(move || {
             if !passkeys.list(pending.user)?.is_empty() {
-                return Err(cpky::Error::DuplicateCredential);
+                return Err(ckyh::Error::DuplicateCredential);
             }
             passkeys.finish_registration(pending.state, &request.credential, month)
         })
@@ -220,7 +220,7 @@ impl Auth {
             .logins
             .remove(&request.ceremony)
             .ok_or(Error::Unauthorized)?;
-        let credential: cpky::CredentialID = request.credential.raw_id.clone().into();
+        let credential: ckyh::CredentialID = request.credential.raw_id.clone().into();
         let passkeys = self.passkeys.clone();
         let authentication = tokio::task::spawn_blocking(move || match pending.state {
             LoginCeremony::Credential(state) => {

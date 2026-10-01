@@ -19,7 +19,7 @@ cpsd = { git = "https://github.com/corbet-foss/cpsd", branch = "main", default-f
 crlt = { git = "https://github.com/corbet-foss/crlt", branch = "main" }
 csgn = { git = "https://github.com/corbet-foss/csgn", branch = "main", features = ["libsql"] }
 cglb = { git = "https://github.com/corbet-libs/cglb", branch = "main" }
-cpky = { git = "https://github.com/corbet-foss/cpky", branch = "main" }
+ckyh = { git = "https://github.com/corbet-foss/ckyh", branch = "main" }
 cthl = { git = "https://github.com/corbet-foss/cthl", branch = "main" }
 axum = "0.8.9"
 tower-http = { version = "0.6.11", features = ["cors"] }
