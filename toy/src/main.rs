@@ -599,30 +599,51 @@ impl World {
                 Ok("last passkey revoked; session and prior credential refused")
             }
             Step::SecondDevice { member } => {
-                let (cli, j) = self.cli(&member);
-                refused(
-                    cli.call(Some(&j.member.session), "register_begin", json!({})),
-                    &["invalid request"],
-                )?;
-                let c = &self.communities[j.community];
-                let proof = holder::presentation(
-                    cli,
-                    None,
-                    &self.wallets[&j.wallet].passport,
-                    &c.verifier.ring,
-                    &c.name,
-                    self.now,
-                )?;
-                refused(
+                let survivor = {
+                    let (cli, joined) = self.cli(&member);
+                    let before: Lobby =
+                        decode(cli.call(Some(&joined.member.session), "lobby", json!({}))?)?;
+                    let mut second = holder::additional(cli, &joined.member)?;
                     cli.call(
-                        Some(&j.member.session),
-                        "register_begin",
-                        json!({"passport":proof}),
-                    ),
-                    &["operation refused"],
+                        Some(&second.session),
+                        "passkey_revoke",
+                        json!({"credential":joined.member.credential}),
+                    )?;
+                    refused(
+                        cli.call(Some(&joined.member.session), "lobby", json!({})),
+                        &["authentication required"],
+                    )?;
+                    holder::login(cli, &mut second)?;
+                    let after: Lobby =
+                        decode(cli.call(Some(&second.session), "lobby", json!({}))?)?;
+                    require(
+                        before.member_id == after.member_id
+                            && before.handle == after.handle
+                            && before.state == after.state,
+                        "surviving device changed membership",
+                    )?;
+                    second
+                };
+                self.members.get_mut(&member).unwrap().member = survivor;
+                let issued = self.issue(&member)?;
+                require(
+                    issued.lobby.state == "admitted" && issued.credential.is_some(),
+                    "surviving device lost access",
                 )?;
-                self.blocked.push("Second-device enrolment has no public action or membership-facade capability; surviving-device access cannot yet be proved.".into());
-                Ok("BLOCKED: second-device enrolment is unavailable through the public CLI")
+                let index = self.members[&member].community;
+                let feed = self.feed(index)?;
+                self.communities[index].verifier.update(&feed, self.now)?;
+                let verified = self.communities[index]
+                    .verifier
+                    .credential(issued.credential.as_ref().unwrap(), self.now)?;
+                require(
+                    verified.member == issued.lobby.member_id,
+                    "surviving device credential changed member",
+                )?;
+                self.members.get_mut(&member).unwrap().credential = issued.credential;
+                Ok(
+                    "second passkey registered; first revoked and refused; surviving passkey logs in and obtains a verified credential for the same member",
+                )
             }
             Step::Force { community } => {
                 let (admin, session) = self.admin(community)?;
