@@ -9,6 +9,8 @@ pub mod api;
 mod auth;
 #[cfg(feature = "server")]
 pub mod cli;
+#[cfg(feature = "client")]
+pub mod client;
 #[cfg(feature = "server")]
 mod community;
 #[cfg(feature = "server")]
@@ -16,8 +18,6 @@ mod community_actions;
 #[cfg(feature = "server")]
 pub mod config;
 pub mod error;
-#[cfg(feature = "client")]
-pub mod client;
 #[cfg(feature = "server")]
 mod global;
 #[cfg(feature = "server")]

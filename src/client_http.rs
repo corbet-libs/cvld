@@ -46,9 +46,13 @@ impl HttpClient {
     pub async fn call(&self, name: &str, request: Value) -> Result<Value> {
         let known = {
             #[cfg(feature = "server")]
-            { crate::api::action(name).is_some() }
+            {
+                crate::api::action(name).is_some()
+            }
             #[cfg(not(feature = "server"))]
-            { super::action(name).is_some() }
+            {
+                super::action(name).is_some()
+            }
         };
         if !known {
             return Err(Error::Invalid);
@@ -64,10 +68,17 @@ impl HttpClient {
         // Builder errors occur before dispatch. Once execute begins, the server
         // may have committed even if transport, framing or decoding fails.
         let call = call.build().map_err(|_| Error::Invalid)?;
-        let mut response = self.client.execute(call).await.map_err(|_| Error::Reconcile)?;
+        let mut response = self
+            .client
+            .execute(call)
+            .await
+            .map_err(|_| Error::Reconcile)?;
         let status = response.status().as_u16();
         const LIMIT: usize = 16 * 1024 * 1024;
-        if response.content_length().is_some_and(|size| size > LIMIT as u64) {
+        if response
+            .content_length()
+            .is_some_and(|size| size > LIMIT as u64)
+        {
             return Err(Error::Reconcile);
         }
         let mut body = Vec::new();

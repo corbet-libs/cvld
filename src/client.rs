@@ -42,10 +42,14 @@ impl Action {
 
 /// Look up a public owner operation without guessing a route from input text.
 pub fn action(name: &str) -> Option<Action> {
-    DOCUMENT.get("paths")?.as_object()?.iter().find_map(|(path, item)| {
-        let operation = item.get("post")?;
-        (operation.get("operationId")?.as_str()? == name).then_some(Action { path, operation })
-    })
+    DOCUMENT
+        .get("paths")?
+        .as_object()?
+        .iter()
+        .find_map(|(path, item)| {
+            let operation = item.get("post")?;
+            (operation.get("operationId")?.as_str()? == name).then_some(Action { path, operation })
+        })
 }
 
 /// An authenticated HTTP runtime selected by the trusted device composition.
