@@ -1,0 +1,93 @@
+#![cfg(all(target_arch = "wasm32", feature = "client-browser"))]
+#[cfg(owned_browser_coverage)]
+use browser_coverage_runtime as _;
+use cvld::{
+    client::{BrowserClient, Client, Transport},
+    error::Error,
+};
+use serde_json::json;
+use wasm_bindgen_test::*;
+wasm_bindgen_test_configure!(run_in_browser);
+
+const BASE: &str = "https://wallet.example.test";
+const HOST: &str = "wallet.example.test";
+
+#[wasm_bindgen_test]
+async fn generated_browser_client_reaches_the_real_keyhole_and_door() {
+    let fixture: serde_json::Value = gloo_net::http::Request::get("/__fixture")
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    let session = fixture["session"].as_str().unwrap().to_owned();
+    let mut public = Client::new(BrowserClient::new(BASE.into(), HOST.into(), None).unwrap());
+    assert!(public.call("global_public", json!({})).await.unwrap()["issuer"].is_array());
+    assert!(matches!(
+        public.call("passport_challenge", json!({})).await,
+        Err(Error::Unauthorized)
+    ));
+    assert!(matches!(
+        public.call("../logout", json!({})).await,
+        Err(Error::Invalid)
+    ));
+    let mut owner = BrowserClient::new(BASE.into(), HOST.into(), Some(session)).unwrap();
+    let mut member = Client::new(owner.clone());
+    assert!(member.call("passport_challenge", json!({})).await.is_ok());
+    assert!(matches!(
+        member
+            .call(
+                "global_suspend",
+                json!({"user":"wrong","until":1_800_000_001})
+            )
+            .await,
+        Err(Error::Forbidden)
+    ));
+    assert!(matches!(
+        owner.send("/unregistered", json!({})).await,
+        Err(Error::Invalid)
+    ));
+    assert!(matches!(
+        owner.call("unknown", json!({})).await,
+        Err(Error::Invalid)
+    ));
+    assert!(owner.send("/v1/logout", json!({})).await.is_ok());
+    assert!(matches!(
+        member.call("passport_challenge", json!({})).await,
+        Err(Error::Unauthorized)
+    ));
+    let malformed =
+        BrowserClient::new(BASE.into(), HOST.into(), Some("bad\nheader".into())).unwrap();
+    assert!(matches!(
+        malformed.call("global_public", json!({})).await,
+        Err(Error::Invalid)
+    ));
+}
+
+#[wasm_bindgen_test]
+fn browser_origin_is_exact_and_cannot_use_the_native_fixture_host_override() {
+    for base in [
+        "invalid",
+        "ftp://localhost",
+        "http://remote.example.test",
+        "https://user@wallet.example.test",
+        "https://wallet.example.test/path",
+        "https://wallet.example.test/?q=x",
+        "https://wallet.example.test/#fragment",
+    ] {
+        assert!(matches!(
+            BrowserClient::new(base.into(), HOST.into(), None),
+            Err(Error::Invalid)
+        ));
+    }
+    assert!(matches!(
+        BrowserClient::new(BASE.into(), "foreign.example.test".into(), None),
+        Err(Error::WrongHost)
+    ));
+    assert!(matches!(
+        BrowserClient::new("http://localhost".into(), HOST.into(), None),
+        Err(Error::WrongHost)
+    ));
+    assert!(BrowserClient::new("http://localhost".into(), "localhost".into(), None).is_ok());
+}
