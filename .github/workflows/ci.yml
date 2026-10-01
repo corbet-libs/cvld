@@ -87,7 +87,8 @@ jobs:
     - run: cargo fmt --all --check
     - run: cargo clippy --locked --all-targets --features development-gate -- -D warnings
     - name: Check portable owner client without server dependencies
-      run: cargo clippy --locked --no-default-features --features client --lib --target wasm32-unknown-unknown -- -D warnings
+      run: cargo clippy --locked --no-default-features --features client --lib --target wasm32-unknown-unknown
+        -- -D warnings
     - name: Regenerate protocol and client
       run: 'cargo run --locked -- openapi > docs/openapi.json
 
@@ -103,8 +104,8 @@ jobs:
     - run: cargo test --locked --features development-gate --no-fail-fast
     - run: cargo test --locked --release
     - name: Prove development gate cannot enter a release binary
-      run: 'if cargo check --locked --release --features development-gate > release-gate.log 2>&1; then exit 1;
-        fi
+      run: 'if cargo check --locked --release --features development-gate > release-gate.log 2>&1; then
+        exit 1; fi
 
         grep -q ''development-gate is forbidden in release builds'' release-gate.log
 
@@ -231,13 +232,20 @@ jobs:
 
         cargo llvm-cov --locked --workspace --all-features --branch --no-cfg-coverage --no-cfg-coverage-nightly
         --ignore-filename-regex ''(/tests/|/tests\.rs$)'' --json --output-path coverage.json'
-    - name: Require every reachable line and branch
-      run: python3 .github/check-coverage.py coverage.json
+    - name: Export source counters from the same execution
+      run: cargo llvm-cov report --locked --branch --ignore-filename-regex '(/tests/|/tests\.rs$)' --lcov
+        --output-path coverage.lcov
+    - name: Require every emitted source line and branch
+      run: 'python3 .github/check-coverage.py coverage.json || true
+
+        python3 .github/check-source-coverage.py coverage.lcov coverage.json'
     - uses: actions/upload-artifact@v7
       if: always()
       with:
         name: coverage
-        path: 'coverage.json
+        path: 'coverage.lcov
+
+          coverage.json
 
           Cargo.lock
 
