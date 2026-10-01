@@ -18,9 +18,10 @@ async fn generated_client_forwards_real_public_member_and_root_calls() {
     assert!(matches!(public.call("../global_public", json!({})).await, Err(Error::Invalid)));
     assert!(action("").is_none());
     let member = enrol(&service, WALLET, None).await;
+    client(&service, WALLET, Some(&member.session)).call("development_gate", json!({})).await.unwrap();
     let mut member = Client::new(HttpClient::new(service.base.clone(), WALLET.into(), Some(member.session)).unwrap());
     assert!(member.call("passport_challenge", json!({})).await.is_ok());
-    assert!(matches!(member.call("suspend", json!({"user":"wrong","until":NOW + 1})).await, Err(Error::Forbidden)));
+    assert!(matches!(member.call("global_suspend", json!({"user":"wrong","until":NOW + 1})).await, Err(Error::Forbidden)));
     let root = enrol(&service, ROOT, Some("synthetic-operator-enrolment-capability")).await;
     let mut root = Client::new(HttpClient::new(service.base.clone(), ROOT.into(), Some(root.session)).unwrap());
     root.call("logout", json!({})).await.unwrap();
