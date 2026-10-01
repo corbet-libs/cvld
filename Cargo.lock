@@ -835,7 +835,7 @@ dependencies = [
 [[package]]
 name = "cblc"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cblc?branch=main#3ce932399a076356de8f49dc69fd23b5671cead4"
+source = "git+https://github.com/corbet-libs/cblc?branch=main#f77585691a14652968f412fb8e92b265149ce3fb"
 dependencies = [
  "cpns",
  "crlt",
@@ -904,7 +904,7 @@ dependencies = [
 [[package]]
 name = "cgrd"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cgrd?branch=main#efbc07feea484d1a69ed5a46b27cfefe39c4c551"
+source = "git+https://github.com/corbet-foss/cgrd?branch=main#d1cacbdb863534183d27de468359f657aa7174fa"
 dependencies = [
  "bigdecimal",
  "cpns",
@@ -912,6 +912,7 @@ dependencies = [
  "csgn",
  "cshm",
  "ed25519-dalek 3.0.0",
+ "geographiclib-rs",
  "precis-profiles",
  "rustrict",
  "serde",
@@ -1031,7 +1032,7 @@ dependencies = [
 [[package]]
 name = "ckyh"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/ckyh?branch=main#92cffd61743165a753a66211963ebb6e607e2ddd"
+source = "git+https://github.com/corbet-foss/ckyh?branch=main#e8fb07237150504caf7a9386b3ba855b7ea6cbc3"
 dependencies = [
  "crlt",
  "serde",
@@ -1293,7 +1294,7 @@ dependencies = [
 [[package]]
 name = "cplc"
 version = "0.0.0"
-source = "git+https://github.com/corbet-libs/cplc?branch=main#04f58f9fe05f10f2a540c825d9d7dc642e60e8cf"
+source = "git+https://github.com/corbet-libs/cplc?branch=main#c5bacb4206c4c2e8ceb7ac1d258f746d6c501d7c"
 dependencies = [
  "cbcn",
  "cgts",
@@ -1310,7 +1311,7 @@ dependencies = [
 [[package]]
 name = "cpns"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cpns?branch=main#bc9a2d53797b864ee58ae36e331336193ce14aa8"
+source = "git+https://github.com/corbet-foss/cpns?branch=main#7b189964a9513f937ba774d603d4b5a327df640b"
 dependencies = [
  "crlt",
  "getrandom 0.4.3",
@@ -1322,7 +1323,7 @@ dependencies = [
 [[package]]
 name = "cpsd"
 version = "0.0.0"
-source = "git+https://github.com/corbet-foss/cpsd?branch=main#d049fd40f8105f634472feb2595db317e997f7e3"
+source = "git+https://github.com/corbet-foss/cpsd?branch=main#a23616e906ffa924aa5bda667e7ea1edf3a692d4"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",
@@ -2448,6 +2449,15 @@ dependencies = [
  "typenum",
  "version_check",
  "zeroize",
+]
+
+[[package]]
+name = "geographiclib-rs"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5a7f08910fd98737a6eda7568e7c5e645093e073328eeef49758cfe8b0489c7"
+dependencies = [
+ "libm",
 ]
 
 [[package]]
