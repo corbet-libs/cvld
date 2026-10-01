@@ -13,7 +13,7 @@ pub struct Auth {
     pub operator: Option<Uuid>,
     pub bootstrap: Option<zeroize::Zeroizing<String>>,
     registrations: HashMap<String, Pending<PendingRegistration>>,
-    logins: HashMap<String, Pending<PendingAuthentication>>,
+    logins: HashMap<String, PendingLogin>,
     sessions: HashMap<String, Grant>,
     capacity: usize,
     lifetime: u64,
@@ -22,6 +22,14 @@ struct Pending<T> {
     state: T,
     user: Uuid,
     expires: u64,
+}
+struct PendingLogin {
+    state: LoginCeremony,
+    expires: u64,
+}
+enum LoginCeremony {
+    Credential(PendingAuthentication),
+    Discoverable(cpky::PendingDiscoverableAuthentication),
 }
 #[derive(Clone)]
 pub struct Grant {
@@ -168,15 +176,38 @@ impl Auth {
         let ceremony = token();
         self.logins.insert(
             ceremony.clone(),
-            Pending {
-                state,
-                user,
+            PendingLogin {
+                state: LoginCeremony::Credential(state),
                 expires: now + 300,
             },
         );
         Ok(Ceremony {
             ceremony,
             user: user.to_string(),
+            options: serde_json::to_value(options).map_err(|_| Error::Unavailable)?,
+        })
+    }
+    pub async fn login_discoverable_begin(&mut self, now: u64) -> Result<DiscoverableCeremony> {
+        self.prune(now);
+        if self.logins.len() >= self.capacity {
+            return Err(Error::Throttled);
+        }
+        let passkeys = self.passkeys.clone();
+        let (options, state) =
+            tokio::task::spawn_blocking(move || passkeys.start_discoverable_authentication())
+                .await
+                .map_err(|_| Error::Unavailable)?
+                .map_err(|_| Error::Unauthorized)?;
+        let ceremony = token();
+        self.logins.insert(
+            ceremony.clone(),
+            PendingLogin {
+                state: LoginCeremony::Discoverable(state),
+                expires: now + 300,
+            },
+        );
+        Ok(DiscoverableCeremony {
+            ceremony,
             options: serde_json::to_value(options).map_err(|_| Error::Unavailable)?,
         })
     }
@@ -191,12 +222,23 @@ impl Auth {
             .ok_or(Error::Unauthorized)?;
         let credential: cpky::CredentialID = request.credential.raw_id.clone().into();
         let passkeys = self.passkeys.clone();
-        let authentication = tokio::task::spawn_blocking(move || {
-            passkeys.finish_authentication(pending.state, &request.credential)
+        let authentication = tokio::task::spawn_blocking(move || match pending.state {
+            LoginCeremony::Credential(state) => {
+                passkeys.finish_authentication(state, &request.credential)
+            }
+            LoginCeremony::Discoverable(state) => {
+                passkeys.finish_discoverable_authentication(state, &request.credential)
+            }
         })
         .await
         .map_err(|_| Error::Unavailable)?
         .map_err(|_| Error::Unauthorized)?;
+        if self
+            .operator
+            .is_some_and(|operator| operator != authentication.member())
+        {
+            return Err(Error::Unauthorized);
+        }
         let token = token();
         let expires = now + self.lifetime;
         self.sessions.insert(

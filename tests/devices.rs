@@ -25,10 +25,20 @@ fn register(
     token
         .perform_register(
             cpky::Url::parse(&format!("https://{host}")).unwrap(),
-            options.public_key,
+            {
+                // SoftToken is a legacy non-resident fixture.
+                let mut options = options.public_key;
+                options
+                    .authenticator_selection
+                    .as_mut()
+                    .unwrap()
+                    .require_resident_key = false;
+                options
+            },
             300_000,
         )
         .unwrap()
+        .into()
 }
 
 #[tokio::test(flavor = "multi_thread")]

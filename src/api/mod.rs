@@ -67,6 +67,13 @@ pub struct Ceremony {
     pub user: String,
     pub options: Value,
 }
+/// A usernameless challenge; identity is returned only after verification.
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(deny_unknown_fields)]
+pub struct DiscoverableCeremony {
+    pub ceremony: String,
+    pub options: Value,
+}
 #[derive(Serialize, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct RegisterFinish {
@@ -238,6 +245,7 @@ actions! {
     register_begin(RegisterStart) -> Ceremony, Public, Both, Record, "Begin UV-required passkey registration";
     register_finish(RegisterFinish) -> User, Public, Both, Record, "Verify and store the first passkey";
     login_begin(LoginStart) -> Ceremony, Public, Both, Check, "Begin credential-first passkey authentication";
+    login_discoverable_begin(Empty) -> DiscoverableCeremony, Public, Both, Check, "Begin usernameless sign-in with a synced passkey";
     login_finish(LoginFinish) -> Session, Public, Both, Record, "Verify user and counter; create an ephemeral session";
     logout(Empty) -> Empty, Authenticated, Both, Check, "End this ephemeral session";
     global_public(Empty) -> GlobalPublic, Public, Global, Check, "Read authenticated global issuer material";

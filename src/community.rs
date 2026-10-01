@@ -51,6 +51,10 @@ struct Pending<T> {
     user: cpky::Uuid,
     until: u64,
 }
+struct PendingLogin {
+    value: cmbr::PendingLogin,
+    until: u64,
+}
 struct Challenge {
     value: cmty::Challenge,
     owner: Option<cpky::Uuid>,
@@ -70,7 +74,7 @@ pub struct CommunityService {
     voucher: cgts::gates::VoucherGate,
     challenges: HashMap<String, Challenge>,
     registrations: HashMap<String, Pending<cmbr::PendingRegistration>>,
-    logins: HashMap<String, Pending<cmbr::PendingLogin>>,
+    logins: HashMap<String, PendingLogin>,
     additions: HashMap<String, devices::PendingAddition>,
     sessions: HashMap<String, SessionState>,
 }
@@ -218,6 +222,8 @@ impl CommunityService {
                 origins: vec![
                     cpky::Url::parse(&format!("https://{host}")).map_err(|_| Error::Invalid)?,
                     cpky::Url::parse(&format!("https://{scope}.{}", config.domain))
+                        .map_err(|_| Error::Invalid)?,
+                    cpky::Url::parse(&format!("https://vault.{scope}.{}", config.domain))
                         .map_err(|_| Error::Invalid)?,
                 ],
             },
@@ -457,15 +463,38 @@ impl CommunityService {
         let id = token();
         self.logins.insert(
             id.clone(),
-            Pending {
+            PendingLogin {
                 value,
-                user,
                 until: now + 300,
             },
         );
         Ok(Ceremony {
             ceremony: id,
             user: user.to_string(),
+            options: serde_json::to_value(options).map_err(|_| Error::Unavailable)?,
+        })
+    }
+    pub async fn login_discoverable_begin(&mut self, now: u64) -> Result<DiscoverableCeremony> {
+        self.prune(now);
+        if self.logins.len() >= self.config.pending_capacity {
+            return Err(Error::Throttled);
+        }
+        let (options, value) = self
+            .facade
+            .membership()
+            .begin_discoverable_login()
+            .await
+            .map_err(|_| Error::Unauthorized)?;
+        let id = token();
+        self.logins.insert(
+            id.clone(),
+            PendingLogin {
+                value,
+                until: now + 300,
+            },
+        );
+        Ok(DiscoverableCeremony {
+            ceremony: id,
             options: serde_json::to_value(options).map_err(|_| Error::Unavailable)?,
         })
     }

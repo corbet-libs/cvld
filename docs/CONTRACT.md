@@ -160,6 +160,7 @@ service host; `Authenticated` means the session's exact host-selected role.
 | register_begin | Public | Both | Record |
 | register_finish | Public | Both | Record |
 | login_begin | Public | Both | Check |
+| login_discoverable_begin | Public | Both | Check |
 | login_finish | Public | Both | Record |
 | logout | Authenticated | Both | Check |
 | global_public | Public | Global | Check |
@@ -177,6 +178,7 @@ service host; `Authenticated` means the session's exact host-selected role.
 | pin_set | Member | Community | Record |
 | pin_get | Member | Community | Check |
 | pin_change | Member | Community | Record |
+| passkey_add | Member | Community | Record |
 | passkey_revoke | Member | Community | Record |
 | setting_set | Admin | Community | Record |
 | platform_set | Root | Community | Record |
@@ -256,3 +258,51 @@ community UUID and pseudonym. There is no manual approval or recovery identity.
 Removing a passkey immediately removes its sessions and outstanding additions.
 Members retain access through other passkeys. Losing every key permanently
 releases membership under NO RETURN.
+
+## Discoverable sign-in and the vault origin
+
+`login_discoverable_begin({})` returns only `{ceremony, options}`. No member or
+credential ID is needed or returned. `login_finish` consumes either the
+credential-first or discoverable pending state and returns the same exact-key
+session. Both beginnings share the existing pending-capacity limit, five-minute
+expiry, action quotas and single-use finish. Operator sessions additionally
+require the configured operator UUID after cpky verifies discovery. Community
+completion still rechecks membership and returns to the lobby; it creates no
+identity, lease extension or login-date record.
+
+The action registry exposes discovery uniformly over HTTP, OpenAPI, CLI, MCP and
+the generated TypeScript client. The door serializes cpky's server-built options
+without rebuilding them. Keyhole must preserve those options (including user ID,
+RP, challenge, required UV/residency and lists), adding only its local PRF input.
+It strips the entire `prf` client-extension entry before forwarding any response,
+and passes the secret only into the local vault capability. A missing PRF can
+leave the vault locked even after server sign-in succeeds. Restoring encrypted
+vault records and the browser iframe compatibility spike belong to the device
+libraries; server sign-in does not claim those have completed.
+
+HTTP request types deserialize credentials directly through cpky's guarded
+response wrappers. Leaked PRF outputs, under either supported extension alias,
+are rejected with a static invalid-request error, without response-body logging.
+The same guard covers initial and additional registration and both login modes.
+Only removing PRF on the device prevents it from reaching the network at all.
+
+Community configuration constructs RP `<scope>.<domain>` directly and explicitly
+allows `https://vault.<scope>.<domain>` alongside the canonical page/API origins.
+Wallet RP is `wallet.<domain>` and root RP is `api.root.<domain>`; none accepts a
+caller-supplied parent-domain RP or wildcard origins. Each community keeps its
+own bound database and the wallet its separate global database. A custom page
+must invoke WebAuthn at the configured canonical vault origin. This server
+allow-list is not a claim of browser Permissions-Policy/PRF iframe support.
+
+Software tests exercise real resident credentials and PRF through the public
+HTTP/CLI clients, including a fresh phone with synced authenticator storage,
+unchanged options, the vault origin, PRF refusal, replay, expiry, and immediate
+session revocation. Toy scenario 7 restores the surviving synced passkey through
+the same usernameless action and verifies unchanged membership and fresh issuance.
+
+The exact community vault origin is also allowed by the HTTP origin/CORS check;
+other communities' vault origins and wallet/root origins remain refused there.
+Upstream webauthn-rs-core 0.5.5 still refuses cross-origin **registration** client
+data (`crossOrigin: true`) with no public configuration switch. Keyhole therefore
+uses top-level registration until a reviewed upstream API supports the iframe.
+The vault-origin software test runs that top-level case; it is not iframe proof.

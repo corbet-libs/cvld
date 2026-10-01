@@ -211,7 +211,16 @@ async fn registration_requires_user_verification_and_ceremonies_are_single_use()
     let credential = authenticator
         .perform_register(
             cpky::Url::parse(&format!("https://{WALLET}")).unwrap(),
-            challenge.public_key,
+            {
+                // SoftToken is a legacy non-resident fixture.
+                let mut options = challenge.public_key;
+                options
+                    .authenticator_selection
+                    .as_mut()
+                    .unwrap()
+                    .require_resident_key = false;
+                options
+            },
             300_000,
         )
         .unwrap();

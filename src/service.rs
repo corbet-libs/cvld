@@ -341,9 +341,10 @@ impl Door {
         (self.inner.hosts.contains_key(host) || self.inner.member_host.as_deref() == Some(host))
             && (origin == format!("https://{host}")
                 || (self.inner.member_host.as_deref() == Some(host)
-                    && host
-                        .strip_prefix("api.")
-                        .is_some_and(|canonical| origin == format!("https://{canonical}"))))
+                    && host.strip_prefix("api.").is_some_and(|canonical| {
+                        origin == format!("https://{canonical}")
+                            || origin == format!("https://vault.{canonical}")
+                    })))
     }
     pub(crate) fn cors(&self) -> tower_http::cors::CorsLayer {
         use axum::http::{Method, header};
@@ -551,6 +552,25 @@ impl Door {
             .lock()
             .await
             .login_begin(request, ctx.now)
+            .await
+    }
+    pub(crate) async fn login_discoverable_begin(
+        &self,
+        ctx: Context,
+        _: Empty,
+    ) -> Result<DiscoverableCeremony> {
+        if self.inner.member_host.as_deref() == Some(ctx.host.as_str()) {
+            return self
+                .community_backend()?
+                .lock()
+                .await
+                .login_discoverable_begin(ctx.now)
+                .await;
+        }
+        self.auth(&ctx.host)?
+            .lock()
+            .await
+            .login_discoverable_begin(ctx.now)
             .await
     }
     pub(crate) async fn login_finish(&self, ctx: Context, request: LoginFinish) -> Result<Session> {

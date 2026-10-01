@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+pub mod resident;
+
 use cvld::{
     api::*,
     cli::Client,
@@ -156,7 +158,16 @@ pub async fn enrol(service: &Running, host: &str, bootstrap: Option<&str>) -> Me
     let credential = authenticator
         .perform_register(
             cpky::Url::parse(&format!("https://{host}")).unwrap(),
-            challenge.public_key,
+            {
+                // SoftToken is a legacy non-resident fixture.
+                let mut options = challenge.public_key;
+                options
+                    .authenticator_selection
+                    .as_mut()
+                    .unwrap()
+                    .require_resident_key = false;
+                options
+            },
             300_000,
         )
         .unwrap();
@@ -544,7 +555,16 @@ pub async fn finish_enrol(service: &Running, host: &str, start: Ceremony) -> Mem
     let credential = authenticator
         .perform_register(
             cpky::Url::parse(&format!("https://{host}")).unwrap(),
-            challenge.public_key,
+            {
+                // SoftToken is a legacy non-resident fixture.
+                let mut options = challenge.public_key;
+                options
+                    .authenticator_selection
+                    .as_mut()
+                    .unwrap()
+                    .require_resident_key = false;
+                options
+            },
             300_000,
         )
         .unwrap();
