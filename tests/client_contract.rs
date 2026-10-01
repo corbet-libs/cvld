@@ -28,6 +28,7 @@ async fn generated_client_forwards_real_public_member_and_root_calls() {
     ));
     assert!(action("").is_none());
     let member = enrol(&service, WALLET, None).await;
+    let member_user = member.user.clone();
     client(&service, WALLET, Some(&member.session))
         .call("development_gate", json!({}))
         .await
@@ -51,6 +52,16 @@ async fn generated_client_forwards_real_public_member_and_root_calls() {
     let mut root = Client::new(
         HttpClient::new(service.base.clone(), ROOT.into(), Some(root.session)).unwrap(),
     );
+    root.call("global_warn", json!({"user": member_user}))
+        .await
+        .unwrap();
+    root.call(
+        "global_suspend",
+        json!({"user": member_user, "until": (NOW / 86_400 + 1) * 86_400}),
+    )
+    .await
+    .unwrap();
+    assert!(member.call("passport_challenge", json!({})).await.is_err());
     root.call("logout", json!({})).await.unwrap();
     assert!(matches!(
         root.call("logout", json!({})).await,
