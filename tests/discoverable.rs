@@ -76,6 +76,10 @@ async fn wallet_discovers_a_synced_passkey_with_one_ceremony_and_refuses_prf_at_
     );
     assert_eq!(strip_prf(&mut response)["results"], prf["results"]);
     let body = json!({"ceremony":ceremony,"credential":response});
+    assert_eq!(
+        call_status(&service, ROOT, None, "login_finish", body.clone()).await,
+        401
+    );
     let session: Session =
         serde_json::from_value(api.call("login_finish", body.clone()).await.unwrap()).unwrap();
     assert_eq!(session.user, user.user);
@@ -129,8 +133,7 @@ async fn community_restore_from_the_vault_origin_preserves_membership_and_revoca
         assert_eq!(
             response
                 .headers()
-                .get("access-control-allow-origin")
-                .is_some(),
+                .contains_key("access-control-allow-origin"),
             allowed
         );
     }
@@ -221,4 +224,50 @@ async fn community_restore_from_the_vault_origin_preserves_membership_and_revoca
         call_status(&service, host, Some(&restored.token), "lobby", json!({})).await,
         401
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn operator_discovery_keeps_the_configured_identity_and_root_host() {
+    let service = global(100).await;
+    let api = client(&service, ROOT, None);
+    let begin: Ceremony = serde_json::from_value(
+        api.call(
+            "register_begin",
+            json!({"bootstrap":"synthetic-operator-enrolment-capability"}),
+        )
+        .await
+        .unwrap(),
+    )
+    .unwrap();
+    let origin = format!("https://{ROOT}");
+    let mut device = Resident::default();
+    let mut response = device.ceremony(begin.options, true, &origin).await;
+    strip_prf(&mut response);
+    api.call(
+        "register_finish",
+        json!({"ceremony":begin.ceremony,"credential":response}),
+    )
+    .await
+    .unwrap();
+    let (ceremony, mut response) = discover(&service, ROOT, &mut device, &origin).await;
+    strip_prf(&mut response);
+    let session: Session = serde_json::from_value(
+        api.call(
+            "login_finish",
+            json!({"ceremony":ceremony,"credential":response}),
+        )
+        .await
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(session.user, "00000000-0000-4000-8000-000000000001");
+    assert_eq!(session.role, Role::Root);
+    assert_eq!(
+        call_status(&service, WALLET, Some(&session.token), "logout", json!({})).await,
+        401
+    );
+    client(&service, ROOT, Some(&session.token))
+        .call("logout", json!({}))
+        .await
+        .unwrap();
 }
