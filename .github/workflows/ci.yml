@@ -107,6 +107,12 @@ jobs:
         npm test --prefix clients/ts
 
         '
+    - name: Verify committed protocol and client
+      run: 'git ls-files --error-unmatch docs/openapi.json clients/ts/schema.d.ts
+
+        git diff --exit-code -- docs/openapi.json clients/ts/schema.d.ts
+
+        '
     - run: cargo test --locked --features development-gate --no-fail-fast
     - run: cargo test --locked --release
     - name: Prove development gate cannot enter a release binary
@@ -119,12 +125,6 @@ jobs:
         > release-debug-gate.log 2>&1; then exit 1; fi
 
         grep -q ''development-gate is forbidden in release builds'' release-debug-gate.log
-
-        '
-    - name: Verify committed protocol and client
-      run: 'git ls-files --error-unmatch docs/openapi.json clients/ts/schema.d.ts
-
-        git diff --exit-code -- docs/openapi.json clients/ts/schema.d.ts
 
         '
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
