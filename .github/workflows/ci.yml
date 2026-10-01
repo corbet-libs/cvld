@@ -101,6 +101,9 @@ jobs:
     - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       with:
         cache-on-failure: true
+        workspaces: |
+          . -> target
+          tests/browser -> target
     - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
         node-version: 22
@@ -335,6 +338,8 @@ jobs:
     - uses: Swatinem/rust-cache@v2
       with:
         key: browser-coverage
+        cache-on-failure: true
+        workspaces: tests/browser -> target
     - id: binding-version
       run: |
         python3 - <<'PYCODE'
