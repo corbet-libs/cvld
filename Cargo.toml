@@ -76,10 +76,6 @@ opt-level = 1
 unsafe_code = "forbid"
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(owned_browser_coverage)"] }
 
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-wasm-bindgen-test = "0.3.79"
-browser-coverage-runtime = { path = ".github/coverage-runtime" }
-
 [[example]]
 name = "browser-fixture"
 path = "tests/support/browser-fixture.rs"

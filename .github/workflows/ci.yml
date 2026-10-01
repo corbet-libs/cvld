@@ -23,6 +23,8 @@ jobs:
     - name: Resolve one fresh dependency snapshot
       run: 'cargo update
 
+        cargo update --manifest-path tests/browser/Cargo.toml
+
         npm update --prefix clients/ts --package-lock-only --ignore-scripts
 
         rustc --version > resolver.txt
@@ -35,11 +37,13 @@ jobs:
 
         npm --version >> resolver.txt
 
-        sha256sum Cargo.lock clients/ts/package-lock.json >> resolver.txt'
+        sha256sum Cargo.lock tests/browser/Cargo.lock clients/ts/package-lock.json >> resolver.txt'
     - uses: actions/upload-artifact@v7
       with:
         name: resolved-lock
         path: 'Cargo.lock
+
+          tests/browser/Cargo.lock
 
           clients/ts/package-lock.json
 
@@ -63,9 +67,12 @@ jobs:
       with:
         tool: cargo-deny
     - run: cargo deny --locked check advisories
+    - run: cargo deny --manifest-path tests/browser/Cargo.toml --locked check advisories
     - name: Preserve formatting feedback
       if: failure()
       run: 'cargo fmt --all
+
+        cargo fmt --manifest-path tests/browser/Cargo.toml --all
 
         git diff --binary > formatting.patch'
     - uses: actions/upload-artifact@v7
@@ -102,10 +109,13 @@ jobs:
     - run: cargo metadata --locked --format-version 1 > dependency-metadata.json
     - run: node .github/check-pins.mjs dependency-metadata.json
     - run: cargo fmt --all --check
+    - run: cargo fmt --manifest-path tests/browser/Cargo.toml --all --check
     - run: cargo clippy --locked --all-targets --features development-gate -- -D warnings
     - name: Check portable owner client without server dependencies
-      run: cargo clippy --locked --no-default-features --features client-browser --lib --target wasm32-unknown-unknown
-        -- -D warnings
+      run: |
+        cargo metadata --manifest-path tests/browser/Cargo.toml --locked --format-version 1 > browser-dependency-metadata.json
+        node .github/check-pins.mjs browser-dependency-metadata.json --browser
+        cargo clippy --manifest-path tests/browser/Cargo.toml --locked --all-targets --target wasm32-unknown-unknown -- -D warnings
     - name: Regenerate protocol and client
       run: 'cargo run --locked -- openapi > docs/openapi.json
 
@@ -154,6 +164,8 @@ jobs:
     - name: Preserve formatting feedback
       if: failure()
       run: 'cargo fmt --all
+
+        cargo fmt --manifest-path tests/browser/Cargo.toml --all
 
         git diff --binary > formatting.patch'
     - uses: actions/upload-artifact@v7
@@ -281,7 +293,6 @@ jobs:
     timeout-minutes: 60
     env:
       CARGO_BUILD_JOBS: 2
-      CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: python3 .github/browser-coverage-runner.py
       CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS: -Zno-profiler-runtime -Clink-args=--no-gc-sections --cfg=owned_browser_coverage
       WASM_BINDGEN_TEST_ONLY_WEB: "1"
       WASM_BINDGEN_SPLIT_LINKED_MODULES: "1"
@@ -295,6 +306,8 @@ jobs:
     - uses: actions/download-artifact@v8
       with:
         name: resolved-lock
+    - name: Use an absolute test runner path for the consumer workspace
+      run: echo "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=python3 $GITHUB_WORKSPACE/.github/browser-coverage-runner.py" >> "$GITHUB_ENV"
     - uses: dtolnay/rust-toolchain@nightly
       with:
         targets: wasm32-unknown-unknown
@@ -306,7 +319,7 @@ jobs:
       run: |
         python3 - <<'PYCODE'
         import os, tomllib
-        packages = tomllib.load(open('Cargo.lock', 'rb'))['package']
+        packages = tomllib.load(open('tests/browser/Cargo.lock', 'rb'))['package']
         versions = [p['version'] for p in packages if p['name'] == 'wasm-bindgen']
         assert len(versions) == 1
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
@@ -350,15 +363,15 @@ jobs:
           sleep 1
         done
         test -s browser-fixture.json
-        cargo llvm-cov test --locked --no-default-features --features client-browser --test browser_client \
+        cargo llvm-cov test --manifest-path tests/browser/Cargo.toml --locked --dep-coverage cvld --test browser_client \
           --branch --coverage-target-only --target wasm32-unknown-unknown --json --output-path wasm-coverage.json \
           --ignore-filename-regex '(/tests/|/\.github/coverage-runtime/)'
     - name: Export browser source counters from the same execution
       if: always()
-      run: cargo llvm-cov report --target wasm32-unknown-unknown --lcov --output-path wasm-coverage.lcov --ignore-filename-regex '(/tests/|/\.github/coverage-runtime/)'
+      run: cargo llvm-cov report --manifest-path tests/browser/Cargo.toml --locked --dep-coverage cvld --target wasm32-unknown-unknown --lcov --output-path wasm-coverage.lcov --ignore-filename-regex '(/tests/|/\.github/coverage-runtime/)'
     - name: Export independent browser source locations
       if: always()
-      run: cargo llvm-cov report --target wasm32-unknown-unknown --text --output-path wasm-coverage.txt --ignore-filename-regex '(/tests/|/\.github/coverage-runtime/)'
+      run: cargo llvm-cov report --manifest-path tests/browser/Cargo.toml --locked --dep-coverage cvld --target wasm32-unknown-unknown --text --output-path wasm-coverage.txt --ignore-filename-regex '(/tests/|/\.github/coverage-runtime/)'
     - name: Require every actual browser source line and branch
       run: python3 .github/check-source-coverage.py wasm-coverage.lcov wasm-coverage.json wasm-coverage.txt
     - uses: actions/upload-artifact@v7
@@ -370,6 +383,8 @@ jobs:
           wasm-coverage.json
           wasm-coverage.txt
           Cargo.lock
+          tests/browser/Cargo.lock
+          resolver.txt
           browser-native-build.json
 
 'on':

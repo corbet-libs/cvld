@@ -18,6 +18,9 @@ from selenium.webdriver.chrome.service import Service
 
 
 def main():
+    # Cargo executes runners from the independent test workspace. All fixture
+    # paths are rooted beside this script, independent of Cargo's working dir.
+    os.chdir(Path(__file__).resolve().parent.parent)
     env = dict(os.environ, NO_HEADLESS="1", WASM_BINDGEN_TEST_ADDRESS="127.0.0.1:0")
     process = subprocess.Popen(
         ["wasm-bindgen-test-runner", *sys.argv[1:]], env=env,

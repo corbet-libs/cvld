@@ -4,6 +4,7 @@ updates:
   directories:
   - /
   - /.github/coverage-runtime
+  - /tests/browser
   schedule:
     interval: daily
   open-pull-requests-limit: 1

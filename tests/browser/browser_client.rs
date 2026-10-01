@@ -1,4 +1,4 @@
-#![cfg(all(target_arch = "wasm32", feature = "client-browser"))]
+#![cfg(target_arch = "wasm32")]
 #[cfg(owned_browser_coverage)]
 use browser_coverage_runtime as _;
 use cvld::{
