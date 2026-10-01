@@ -44,6 +44,8 @@ pub type Facade = cmnt::Community<
     cplc::LibsqlStore,
     csgn::LibsqlStore,
 >;
+mod devices;
+
 struct Pending<T> {
     value: T,
     user: cpky::Uuid,
@@ -69,6 +71,7 @@ pub struct CommunityService {
     challenges: HashMap<String, Challenge>,
     registrations: HashMap<String, Pending<cmbr::PendingRegistration>>,
     logins: HashMap<String, Pending<cmbr::PendingLogin>>,
+    additions: HashMap<String, devices::PendingAddition>,
     sessions: HashMap<String, SessionState>,
 }
 impl CommunityService {
@@ -286,6 +289,7 @@ impl CommunityService {
             challenges: HashMap::new(),
             registrations: HashMap::new(),
             logins: HashMap::new(),
+            additions: HashMap::new(),
             sessions: HashMap::new(),
         })
     }
@@ -328,6 +332,7 @@ impl CommunityService {
         self.challenges.retain(|_, p| p.until > now);
         self.registrations.retain(|_, p| p.until > now);
         self.logins.retain(|_, p| p.until > now);
+        self.additions.retain(|_, p| p.until > now);
         self.sessions.retain(|_, s| s.grant.expires > now);
     }
     pub async fn authenticate(
@@ -504,7 +509,10 @@ impl CommunityService {
         })
     }
     pub fn logout(&mut self, token: &str) {
-        self.sessions.remove(token);
+        if let Some(session) = self.sessions.remove(token) {
+            self.additions
+                .retain(|_, p| p.session_id != session.grant.session_id);
+        }
     }
     pub async fn reserved(&self, now: u64) -> Result<Vec<String>> {
         let policy = self

@@ -160,3 +160,28 @@ pub struct Announcement {
 pub struct RevokePasskey {
     pub credential: Vec<u8>,
 }
+
+/// Both phases of one session-bound additional-passkey operation.
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(tag = "step", rename_all = "snake_case", deny_unknown_fields)]
+pub enum AddPasskey {
+    Begin,
+    Finish {
+        ceremony: String,
+        #[schema(value_type = std::collections::BTreeMap<String, Value>, additional_properties = true)]
+        credential: Box<cpky::RegisterPublicKeyCredential>,
+    },
+}
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(tag = "step", rename_all = "snake_case", deny_unknown_fields)]
+pub enum AddedPasskey {
+    Challenge {
+        ceremony: String,
+        user: String,
+        options: Value,
+    },
+    Registered {
+        user: String,
+        credential: Vec<u8>,
+    },
+}

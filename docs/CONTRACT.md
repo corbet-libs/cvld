@@ -201,11 +201,10 @@ explicit service restart; no global secret or account data enters this path.
 Production global gate providers are not configured by this door yet; the only
 interactive global gate adapter in this build is the development feature. The
 community voucher gate is real and requires a configured sponsor public key.
-Legal-order/self-ban authority integration and additional-device enrolment remain
-unconfigured. The mandatory legal veto still runs on every community gate check.
+Legal-order/self-ban authority integration remains unconfigured. The mandatory legal veto still runs on every community gate check.
 
-Pin changes use cmbr's sealed cblc interface and fail closed while the required
-cblc proof extensions are unavailable. Initial v2 pins and reads work. Credentials
+Pin changes use cmbr's sealed cblc interface and remain disabled in the facade
+integration. Initial v2 pins and reads work. Credentials
 require caller-authorized public device keys; this door does not implement a
 separate device-key attestation protocol. Schema changes currently advance the
 epoch immediately; archived definitions do not authorize grandfathering.
@@ -243,3 +242,17 @@ upstream commits; the Rust compiler remains current stable.
 Community startup and global-ring refresh reject any community signing key also
 present in the authenticated global signing ring, including retained keys. The
 startup check runs before storing the community signer.
+
+## Additional passkeys
+
+The `passkey_add` action has `begin` and `finish` phases in one registry entry,
+shared by HTTP, OpenAPI, CLI, MCP and the generated TypeScript client. It requires
+a live community-member session. The five-minute, single-use ceremony is bound
+to that exact session; replacement, logout, expiry and authorizer revocation
+invalidate it. cpky verifies user verification and atomically checks the old key
+while inserting the new one; cmbr checks membership. The new key uses the same
+community UUID and pseudonym. There is no manual approval or recovery identity.
+
+Removing a passkey immediately removes its sessions and outstanding additions.
+Members retain access through other passkeys. Losing every key permanently
+releases membership under NO RETURN.
