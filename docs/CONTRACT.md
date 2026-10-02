@@ -28,7 +28,7 @@ or expiring; restarting the process discards them.
 `cvld serve global --config <file>` owns one crlt database, cglb's issuer,
 uniqueness key and durable csgn signer. Wallet authentication uses ckyh at
 `wallet.<domain>`. Root authentication uses a separate RP and namespace at
-`api.root.<domain>`. Hosts match exactly; forwarded-host headers are ignored.
+`api.admin.root.<domain>`. Hosts match exactly; forwarded-host headers are ignored.
 Only UV-verified passkeys create sessions. Each use rechecks its exact credential
 for revocation. A member cannot request an operator role. Operator UUIDs and a
 one-time initial registration capability are explicit service configuration.
@@ -312,7 +312,7 @@ Only removing PRF on the device prevents it from reaching the network at all.
 
 Community configuration constructs RP `<scope>.<domain>` directly and explicitly
 allows `https://vault.<scope>.<domain>` alongside the canonical page/API origins.
-Wallet RP is `wallet.<domain>` and root RP is `api.root.<domain>`; none accepts a
+Wallet RP is `wallet.<domain>` and root RP is `api.admin.root.<domain>`; none accepts a
 caller-supplied parent-domain RP or wildcard origins. Each community keeps its
 own bound database and the wallet its separate global database. A custom page
 must invoke WebAuthn at the configured canonical vault origin. This server
@@ -414,3 +414,10 @@ Foyer through cmsg and must never expose raw authentication responses.
 Check/Record describes permanent writes, not whether an operation is read-only:
 login challenges and logout can change ephemeral state. A forwarding shell must
 not infer a read-only tool hint from `x-effect=check`.
+
+The platform garden uses `admin.root.<base>` and the exact door host
+`api.admin.root.<base>`. The former `api.root.<base>` is refused. Operator
+ceremonies use the scope RP (`root.<base>` or `<community>.<base>`) and explicitly
+allow their own API and garden origins. No sibling garden or wildcard origin is
+accepted. Member Vault ceremonies remain at `vault.<community>.<base>` under
+that community's RP; the global wallet keeps its separate RP.
