@@ -394,3 +394,23 @@ it does not replace server authentication or lifecycle logic.
 An additional browser vector holds the reply open after the real commit until
 the production 30-second deadline aborts it, then verifies the session is gone
 and only one mutation was sent. The test does not shorten the adapter's deadline.
+
+## Trusted device authentication
+
+The single registry marks every operation with `x-client-access`. `forward`
+allows the raw response to reach a device shell; `trusted` requires private
+runtime consumption. Missing or unknown metadata is never permission. The
+portable client's forwarding contract and action lookup derive their surface
+from these marks; they do not contain another action table.
+
+`login_finish` is trusted. `Client::authenticate` validates its original server
+response, adopts the bearer in that same pinned transport, and returns only
+`SessionInfo { user, role, expires }`. The forwarding path rejects it before
+dispatch. Failed or ambiguous authentication never installs a proposed session.
+The native and browser transports wipe response buffers and replaced bearers.
+Raw server APIs remain available to trusted integrations; product shells consume
+Foyer through cmsg and must never expose raw authentication responses.
+
+Check/Record describes permanent writes, not whether an operation is read-only:
+login challenges and logout can change ephemeral state. A forwarding shell must
+not infer a read-only tool hint from `x-effect=check`.
