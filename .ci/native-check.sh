@@ -6,7 +6,7 @@ export CARGO_HTTP_USER_AGENT=door-ci
 rustc --version
 cargo --version
 sha256sum Cargo.lock tests/browser/Cargo.lock
-python3 .github/check-first-party.py
+python3 .github/check-first-party.py --archive
 cargo fmt --all --check
 cargo fmt --manifest-path tests/browser/Cargo.toml --all --check
 cargo metadata --locked --format-version 1 > dependency-metadata.json
