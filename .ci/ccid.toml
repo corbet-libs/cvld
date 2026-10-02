@@ -3,8 +3,8 @@ project = "cvld"
 
 [checks.native]
 kind = "commands"
-commands = [["bash", ".ci/with-native-libraries.sh", "bash", ".ci/native-check.sh"]]
+commands = [["bash", ".ci/native-check.sh"]]
 
 [checks.protocol]
 kind = "commands"
-commands = [["bash", ".ci/with-native-libraries.sh", "bash", ".ci/protocol-check.sh"]]
+commands = [["bash", ".ci/protocol-check.sh"]]
